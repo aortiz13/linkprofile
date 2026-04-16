@@ -165,6 +165,7 @@ export function HeaderBlockEditor({ block, onUpdate }: { block: Block; onUpdate:
 export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: (config: Record<string, unknown>) => void }) {
   const queryClient = useQueryClient();
   const config = block.config as { layout?: string };
+  const layout = config.layout || "list";
 
   const { data: linksData } = useQuery({
     queryKey: ["admin-links"],
@@ -203,52 +204,62 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links"] }),
   });
 
+  const updateLinkMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      fetch(`/api/admin/links/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links"] }),
+  });
+
   const links: LinkType[] = linksData?.links || [];
 
+  const LAYOUTS = [
+    { id: "list", label: "Lista" },
+    { id: "bento", label: "Bento Grid" },
+    { id: "large_card", label: "Large card" },
+    { id: "grid", label: "Grid" },
+    { id: "carousel", label: "Carousel" },
+    { id: "alternating", label: "Alternating" },
+    { id: "text_left", label: "Text left" },
+    { id: "text_right", label: "Text right" },
+    { id: "story", label: "Story" },
+  ];
+
   return (
-    <div className="space-y-3">
-      {/* Layout selector */}
-      <div className="flex gap-2 mb-2">
-        {[
-          { value: "list", label: "Lista" },
-          { value: "bento", label: "Bento Grid" },
-        ].map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => onUpdate({ ...config, layout: opt.value })}
-            className={`px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-medium border transition-all ${
-              config.layout === opt.value
-                ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
-                : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-hover)]"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+    <div className="space-y-4">
+      {/* Layout Selection */}
+      <div className="space-y-2">
+        <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Layout del bloque</span>
+        <div className="flex flex-wrap gap-2">
+          {LAYOUTS.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => onUpdate({ ...config, layout: l.id })}
+              className={`px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-medium border transition-all ${
+                layout === l.id
+                  ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                  : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-hover)]"
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Existing links */}
-      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+      <div className="space-y-2 max-h-[400px] overflow-y-auto">
         {links.map((link) => (
-          <div
+          <LinkItemEditor
             key={link.id}
-            className={`flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] bg-[var(--bg-elevated)] text-sm ${!link.active ? "opacity-50" : ""}`}
-          >
-            <GripVertical className="w-3 h-3 text-[var(--text-muted)]" />
-            <span className="flex-1 truncate">{link.title}</span>
-            <button
-              onClick={() => toggleMutation.mutate(link)}
-              className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)]"
-            >
-              {link.active ? "ON" : "OFF"}
-            </button>
-            <button
-              onClick={() => deleteMutation.mutate(link.id)}
-              className="text-[var(--text-muted)] hover:text-red-500"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-          </div>
+            link={link}
+            onToggle={() => toggleMutation.mutate(link)}
+            onDelete={() => deleteMutation.mutate(link.id)}
+            onUpdateImage={(imageUrl) => updateLinkMutation.mutate({ id: link.id, data: { imageUrl } })}
+          />
         ))}
       </div>
 
@@ -272,6 +283,116 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
           className="px-3 py-2 rounded-[var(--radius-md)] bg-[var(--accent)] text-white text-sm hover:bg-[var(--accent-light)] disabled:opacity-50"
         >
           <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Link Item Editor (inner component) ──────────────────────────────────────
+function LinkItemEditor({
+  link,
+  onToggle,
+  onDelete,
+  onUpdateImage,
+}: {
+  link: LinkType;
+  onToggle: () => void;
+  onDelete: () => void;
+  onUpdateImage: (imageUrl: string | null) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/admin/links/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        onUpdateImage(data.imageUrl);
+      }
+    } catch (error) {
+      console.error("Failed to upload link image", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div
+      className={`p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-lg)] space-y-2 relative group ${!link.active ? "opacity-50" : ""}`}
+    >
+      <div className="flex items-center gap-2">
+        <GripVertical className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
+
+        {/* Image thumbnail or upload button */}
+        <div className="relative shrink-0">
+          {link.imageUrl ? (
+            <div className="w-10 h-10 rounded-md overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-[var(--border)] group/img relative cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={link.imageUrl} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                {isUploading ? (
+                  <Loader2 className="w-3 h-3 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-3 h-3 text-white" />
+                )}
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-10 h-10 rounded-md border border-dashed border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
+              title="Agregar imagen"
+            >
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 text-[var(--text-muted)] animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4 text-[var(--text-muted)]" />
+              )}
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleImageUpload(f);
+            }}
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <span className="text-sm truncate block">{link.title}</span>
+          <span className="text-xs text-[var(--text-muted)] truncate block">{link.url}</span>
+        </div>
+        <button
+          onClick={onToggle}
+          className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] shrink-0"
+        >
+          {link.active ? "ON" : "OFF"}
+        </button>
+        {link.imageUrl && (
+          <button
+            onClick={() => onUpdateImage(null)}
+            className="text-xs text-[var(--text-muted)] hover:text-red-500 shrink-0"
+            title="Quitar imagen"
+          >
+            ✕
+          </button>
+        )}
+        <button
+          onClick={onDelete}
+          className="text-[var(--text-muted)] hover:text-red-500 shrink-0"
+        >
+          <Trash2 className="w-3 h-3" />
         </button>
       </div>
     </div>

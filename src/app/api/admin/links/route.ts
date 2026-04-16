@@ -25,6 +25,7 @@ const createSchema = z.object({
   url: z.string().min(1),
   type: z.string().default("custom"),
   icon: z.string().optional(),
+  imageUrl: z.string().optional(),
   active: z.boolean().default(true),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });

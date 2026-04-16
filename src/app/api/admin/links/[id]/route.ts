@@ -10,6 +10,7 @@ const updateSchema = z.object({
   url: z.string().min(1).optional(),
   type: z.string().optional(),
   icon: z.string().optional(),
+  imageUrl: z.string().nullable().optional(),
   active: z.boolean().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });

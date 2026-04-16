@@ -62,6 +62,7 @@ export const links = pgTable(
     type: text("type").notNull().default("custom"),
     // types: custom | instagram | whatsapp | email | tiktok | youtube | twitter | ai_ref
     icon: text("icon"), // lucide icon name or custom URL
+    imageUrl: text("image_url"), // optional thumbnail/image for the link
     active: boolean("active").notNull().default(true),
     order: integer("order").notNull().default(0),
     metadata: jsonb("metadata"), // e.g. { handle: 'myprofile' } for deep links
