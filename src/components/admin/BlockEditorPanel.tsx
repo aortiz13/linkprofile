@@ -259,6 +259,7 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
             onToggle={() => toggleMutation.mutate(link)}
             onDelete={() => deleteMutation.mutate(link.id)}
             onUpdateImage={(imageUrl) => updateLinkMutation.mutate({ id: link.id, data: { imageUrl } })}
+            onUpdateField={(data) => updateLinkMutation.mutate({ id: link.id, data })}
           />
         ))}
       </div>
@@ -295,14 +296,19 @@ function LinkItemEditor({
   onToggle,
   onDelete,
   onUpdateImage,
+  onUpdateField,
 }: {
   link: LinkType;
   onToggle: () => void;
   onDelete: () => void;
   onUpdateImage: (imageUrl: string | null) => void;
+  onUpdateField: (data: Record<string, unknown>) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(link.title);
+  const [editUrl, setEditUrl] = useState(link.url);
 
   const handleImageUpload = async (file: File) => {
     setIsUploading(true);
@@ -318,6 +324,13 @@ function LinkItemEditor({
       console.error("Failed to upload link image", error);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (editTitle.trim() && editUrl.trim()) {
+      onUpdateField({ title: editTitle.trim(), url: editUrl.trim() });
+      setIsEditing(false);
     }
   };
 
@@ -369,13 +382,21 @@ function LinkItemEditor({
           />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <span className="text-sm truncate block">{link.title}</span>
+        <button
+          onClick={() => { setIsEditing(!isEditing); setEditTitle(link.title); setEditUrl(link.url); }}
+          className="flex-1 min-w-0 text-left"
+          title="Clic para editar"
+        >
+          <span className="text-sm truncate block hover:text-[var(--accent)] transition-colors">{link.title}</span>
           <span className="text-xs text-[var(--text-muted)] truncate block">{link.url}</span>
-        </div>
+        </button>
         <button
           onClick={onToggle}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] shrink-0"
+          className={`text-xs font-medium px-2 py-1 rounded-md shrink-0 transition-colors ${
+            link.active
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-neutral-500/10 text-[var(--text-muted)]"
+          }`}
         >
           {link.active ? "ON" : "OFF"}
         </button>
@@ -395,6 +416,44 @@ function LinkItemEditor({
           <Trash2 className="w-3 h-3" />
         </button>
       </div>
+
+      {/* Expanded edit form */}
+      {isEditing && (
+        <div className="pt-2 border-t border-[var(--border)] space-y-2">
+          <div>
+            <label className="block text-xs text-[var(--text-muted)] mb-1">Título</label>
+            <input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--accent)]"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[var(--text-muted)] mb-1">URL</label>
+            <input
+              value={editUrl}
+              onChange={(e) => setEditUrl(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--accent)]"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-3 py-1.5 text-xs rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!editTitle.trim() || !editUrl.trim()}
+              className="px-3 py-1.5 text-xs rounded-[var(--radius-md)] bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-light)] disabled:opacity-50"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
