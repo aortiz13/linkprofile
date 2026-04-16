@@ -8,10 +8,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "prestart": "npm run db:migrate",
+    "prestart": "npm run db:push",
     "start": "next start",
     "lint": "eslint",
-    "db:push": "drizzle-kit push",
+    "db:push": "drizzle-kit push --force",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
