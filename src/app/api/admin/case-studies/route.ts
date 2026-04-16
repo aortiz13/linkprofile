@@ -2,24 +2,16 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 
 // Fetch case studies from the Brandboost GitHub repo
-// Parses the data/caseStudies.ts TypeScript file and extracts case study entries
+// Uses raw.githubusercontent.com to avoid API rate limits and parses the TS file
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    // Fetch the raw file from GitHub
+    // Use raw content URL — no auth required for public repos, no rate limits
     const res = await fetch(
-      "https://api.github.com/repos/aortiz13/web-Brandboost/contents/data/caseStudies.ts",
-      {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          ...(process.env.GITHUB_TOKEN
-            ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-            : {}),
-        },
-        next: { revalidate: 300 }, // cache 5 min
-      }
+      "https://raw.githubusercontent.com/aortiz13/web-Brandboost/main/data/caseStudies.ts",
+      { next: { revalidate: 300 } } // cache 5 min
     );
 
     if (!res.ok) {
@@ -29,8 +21,7 @@ export async function GET() {
       );
     }
 
-    const data = await res.json();
-    const content = Buffer.from(data.content, "base64").toString("utf-8");
+    const content = await res.text();
 
     // Parse the TypeScript file to extract case study objects
     const studies = parseCaseStudies(content);
@@ -58,53 +49,48 @@ interface ParsedStudy {
 function parseCaseStudies(content: string): ParsedStudy[] {
   const studies: ParsedStudy[] = [];
 
-  // Extract each case study block by finding id patterns
-  // Uses regex to find each object's key fields
-  const idRegex = /id:\s*['"]([^'"]+)['"]/g;
-  const ids: string[] = [];
+  // Split the file into blocks by finding top-level objects in the array
+  // Each block starts with `{` + newline + `id:` pattern
+  const blockRegex = /\{\s*\n\s*id:\s*['"]([^'"]+)['"]/g;
+  const ids: { id: string; pos: number }[] = [];
   let match;
-  while ((match = idRegex.exec(content)) !== null) {
-    ids.push(match[1]);
+
+  while ((match = blockRegex.exec(content)) !== null) {
+    ids.push({ id: match[1], pos: match.index });
   }
 
-  for (const id of ids) {
-    // Find the block starting from this id
-    const idPos = content.indexOf(`id: '${id}'`) !== -1
-      ? content.indexOf(`id: '${id}'`)
-      : content.indexOf(`id: "${id}"`);
+  for (let i = 0; i < ids.length; i++) {
+    const { id, pos } = ids[i];
+    // Extract the block from this position to the next block (or end of file)
+    const endPos = i + 1 < ids.length ? ids[i + 1].pos : content.length;
+    const block = content.slice(pos, endPos);
 
-    if (idPos === -1) continue;
-
-    // Extract a window of text around this id to find sibling fields
-    // Go back to find the opening { and forward to find sidebar/content
-    const blockStart = content.lastIndexOf("{", idPos);
-    const sidebarPos = content.indexOf("sidebar:", idPos);
-    const blockSlice = sidebarPos !== -1
-      ? content.slice(blockStart, sidebarPos)
-      : content.slice(blockStart, blockStart + 1000);
+    // Only look at the header portion (before "sidebar:" or "content:")
+    const headerEnd = block.search(/\b(sidebar|content)\s*[:]/);
+    const header = headerEnd !== -1 ? block.slice(0, headerEnd) : block.slice(0, 800);
 
     const getField = (field: string): string => {
-      // Match both single and double quoted strings, also template literals
-      const regex = new RegExp(`${field}:\\s*['"\`]([^'"\`]*?)['"\`]`);
-      const m = blockSlice.match(regex);
-      return m ? m[1] : "";
+      // Match: field: 'value' or field: "value" or "field": "value"
+      const patterns = [
+        new RegExp(`${field}:\\s*'([^']*?)'`),
+        new RegExp(`${field}:\\s*"([^"]*?)"`),
+        new RegExp(`"${field}":\\s*"([^"]*?)"`),
+      ];
+      for (const regex of patterns) {
+        const m = header.match(regex);
+        if (m) return m[1];
+      }
+      return "";
     };
 
-    // For multi-line or escaped strings, also check with double quotes
-    const getFieldAlt = (field: string): string => {
-      const regex = new RegExp(`\\\\?"${field}\\\\?":\\s*\\\\?"([^"]*?)\\\\?"`);
-      const m = blockSlice.match(regex);
-      return m ? m[1] : "";
-    };
+    const client = getField("client");
+    const title = getField("title");
+    const image = getField("image");
+    const logo = getField("logo");
+    const industry = getField("industry");
+    const excerpt = getField("excerpt");
 
-    const client = getField("client") || getFieldAlt("client");
-    const title = getField("title") || getFieldAlt("title");
-    const image = getField("image") || getFieldAlt("image");
-    const logo = getField("logo") || getFieldAlt("logo");
-    const industry = getField("industry") || getFieldAlt("industry");
-    const excerpt = getField("excerpt") || getFieldAlt("excerpt");
-
-    if (id && title) {
+    if (id && (title || client)) {
       studies.push({ id, client, title, image, logo, industry, excerpt });
     }
   }
