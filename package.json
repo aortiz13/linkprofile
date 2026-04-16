@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "prestart": "npm run db:push",
+    "prestart": "npm run db:push && npx tsx src/lib/db/bootstrap.ts",
     "start": "next start",
     "lint": "eslint",
     "db:push": "drizzle-kit push --force",
