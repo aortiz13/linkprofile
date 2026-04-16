@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import sharp from "sharp";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -42,18 +40,11 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const resized = await sharp(buffer)
       .resize(400, 400, { fit: "cover", position: "center" })
-      .jpeg({ quality: 85 })
+      .jpeg({ quality: 80 })
       .toBuffer();
 
-    // Save to filesystem
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
-    const filename = `avatar.jpg`;
-    const filepath = path.join(uploadsDir, filename);
-    await writeFile(filepath, resized);
-
-    const avatarUrl = `/uploads/${filename}?t=${Date.now()}`;
+    // Store as data URL so images survive container redeployments
+    const avatarUrl = `data:image/jpeg;base64,${resized.toString("base64")}`;
 
     // Update profile
     await db

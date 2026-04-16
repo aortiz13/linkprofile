@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import sharp from "sharp";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const VALID_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -36,17 +34,11 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const resized = await sharp(buffer)
       .resize(600, 600, { fit: "cover", position: "center" })
-      .jpeg({ quality: 85 })
+      .jpeg({ quality: 80 })
       .toBuffer();
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "links");
-    await mkdir(uploadsDir, { recursive: true });
-
-    const filename = `link-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.jpg`;
-    const filepath = path.join(uploadsDir, filename);
-    await writeFile(filepath, resized);
-
-    const imageUrl = `/uploads/links/${filename}`;
+    // Store as data URL so images survive container redeployments
+    const imageUrl = `data:image/jpeg;base64,${resized.toString("base64")}`;
 
     return NextResponse.json({ imageUrl });
   } catch (error) {
