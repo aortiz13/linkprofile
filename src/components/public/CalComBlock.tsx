@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 export interface CalComConfig {
   namespace?: string;
-  calLink: string;
+  calLink?: string;
   config?: Record<string, any>;
   uiConfig?: Record<string, any>;
   title?: string;
