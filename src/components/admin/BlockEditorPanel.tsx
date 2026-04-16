@@ -899,7 +899,7 @@ export function AIGreetingEditor({ block, onUpdate }: { block: Block; onUpdate: 
 
 // ─── Cal.com Block ──────────────────────────────────────────────────────────
 export function CalComBlockEditor({ block, onUpdate }: { block: Block; onUpdate: (config: Record<string, unknown>) => void }) {
-  const config = (block.config?.calData as Record<string, any>) || {};
+  const config = ((block.config as any)?.calData as Record<string, any>) || {};
   const [snippet, setSnippet] = useState("");
 
   const handleParseSnippet = (val: string) => {
