@@ -677,6 +677,14 @@ export function SocialIconsBlockEditor({ block, onUpdate }: { block: Block; onUp
     onUpdate({ ...config, icons: icons.filter((_, i) => i !== idx) });
   };
 
+  const moveIcon = (idx: number, dir: "up" | "down") => {
+    const target = dir === "up" ? idx - 1 : idx + 1;
+    if (target < 0 || target >= icons.length) return;
+    const next = [...icons];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    onUpdate({ ...config, icons: next });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -695,6 +703,26 @@ export function SocialIconsBlockEditor({ block, onUpdate }: { block: Block; onUp
         {icons.map((icon, idx) => (
           <div key={idx} className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-lg)] space-y-2">
             <div className="flex items-center gap-2">
+              {/* Move buttons */}
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  onClick={() => moveIcon(idx, "up")}
+                  disabled={idx === 0}
+                  className="p-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-25 transition-colors"
+                  title="Subir"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                </button>
+                <button
+                  onClick={() => moveIcon(idx, "down")}
+                  disabled={idx === icons.length - 1}
+                  className="p-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-25 transition-colors"
+                  title="Bajar"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+
               <select
                 value={icon.platform}
                 onChange={(e) => updateIcon(idx, "platform", e.target.value)}
