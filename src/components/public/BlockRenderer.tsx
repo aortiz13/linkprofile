@@ -12,6 +12,7 @@ import { GeoCustomBlock } from "./GeoCustomBlock";
 import { AIGreeting } from "./AIGreeting";
 import { CalComBlock } from "./CalComBlock";
 import { CaseStudiesBlock } from "./CaseStudiesBlock";
+import { LeadMagnetBlock } from "./LeadMagnetBlock";
 import type { Block, Profile, Link } from "@/lib/db/schema";
 import { getOrCreateSessionId } from "./LinkCard";
 
@@ -120,6 +121,26 @@ export function BlockRenderer({ block, profile, links, aiFeatures }: BlockRender
           studies={studies}
           baseUrl={baseUrl}
           onTrackClick={(url, title) => handleTrackClick(url, title, "case_studies")}
+        />
+      );
+    }
+
+    case "lead_magnet": {
+      const title = (config.title as string) || "Descarga tu recurso gratis";
+      const description = (config.description as string) || "";
+      const buttonText = (config.buttonText as string) || "Descargar ahora";
+      const resourceUrl = (config.resourceUrl as string) || "";
+      const magnetId = (config.magnetId as string) || "";
+      const privacyUrl = (config.privacyUrl as string) || "";
+      return (
+        <LeadMagnetBlock
+          profileId={profile.id}
+          title={title}
+          description={description}
+          buttonText={buttonText}
+          resourceUrl={resourceUrl}
+          magnetId={magnetId}
+          privacyUrl={privacyUrl}
         />
       );
     }

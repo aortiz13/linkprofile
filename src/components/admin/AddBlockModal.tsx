@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Link2, Type, Video, Minus, AtSign, Search, Sparkles, Calendar, Presentation } from "lucide-react";
+import { X, Link2, Type, Video, Minus, AtSign, Search, Sparkles, Calendar, Presentation, Gift } from "lucide-react";
 import { useState } from "react";
 
 const BLOCK_TYPES = [
@@ -92,6 +92,14 @@ const BLOCK_TYPES = [
     icon: Presentation,
     color: "#f97316",
     category: "content",
+  },
+  {
+    type: "lead_magnet",
+    label: "Lead Magnet",
+    description: "Formulario para captar leads a cambio de un recurso descargable (PDF, doc, etc).",
+    icon: Gift,
+    color: "#14b8a6",
+    category: "grow",
   },
 ];
 

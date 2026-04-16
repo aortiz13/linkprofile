@@ -1433,3 +1433,93 @@ export function CaseStudiesBlockEditor({ block, onUpdate }: { block: Block; onUp
     </div>
   );
 }
+
+// ─── Lead Magnet Block Editor ────────────────────────────────────────────────
+export function LeadMagnetBlockEditor({ block, onUpdate }: { block: Block; onUpdate: (config: Record<string, unknown>) => void }) {
+  const config = block.config as {
+    title?: string;
+    description?: string;
+    buttonText?: string;
+    resourceUrl?: string;
+    magnetId?: string;
+    privacyUrl?: string;
+  };
+
+  const update = (key: string, value: string) => {
+    onUpdate({ ...config, [key]: value });
+  };
+
+  // Auto-generate magnetId if missing
+  if (!config.magnetId) {
+    onUpdate({ ...config, magnetId: `lm-${Date.now().toString(36)}` });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">Título del Lead Magnet</label>
+        <input
+          value={config.title || ""}
+          onChange={(e) => update("title", e.target.value)}
+          placeholder="Ej: Descarga tu guía gratuita de IA"
+          className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] bg-transparent"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">Descripción</label>
+        <textarea
+          value={config.description || ""}
+          onChange={(e) => update("description", e.target.value)}
+          placeholder="Breve descripción de lo que va a recibir el usuario..."
+          rows={2}
+          className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] bg-transparent resize-none"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">Texto del botón</label>
+        <input
+          value={config.buttonText || ""}
+          onChange={(e) => update("buttonText", e.target.value)}
+          placeholder="Descargar ahora"
+          className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] bg-transparent"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">URL del recurso (PDF, doc, etc.)</label>
+        <input
+          value={config.resourceUrl || ""}
+          onChange={(e) => update("resourceUrl", e.target.value)}
+          placeholder="https://drive.google.com/... o enlace directo al archivo"
+          className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] bg-transparent"
+        />
+        <p className="text-[10px] text-[var(--text-muted)]">
+          El usuario será redirigido a esta URL después de enviar el formulario.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">URL de Política de Privacidad</label>
+        <input
+          value={config.privacyUrl || ""}
+          onChange={(e) => update("privacyUrl", e.target.value)}
+          placeholder="https://tu-sitio.com/privacidad (opcional)"
+          className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] bg-transparent"
+        />
+      </div>
+
+      {config.magnetId && (
+        <div className="px-3 py-2 bg-[var(--bg-surface)] rounded-[var(--radius-md)] border border-[var(--border)]">
+          <p className="text-[10px] text-[var(--text-muted)]">
+            ID del Lead Magnet: <span className="font-mono text-[var(--text-primary)]">{config.magnetId}</span>
+          </p>
+          <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+            Los leads captados aparecerán con fuente: <span className="font-mono text-[var(--accent)]">lead_magnet:{config.magnetId}</span>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

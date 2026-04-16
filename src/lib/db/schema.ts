@@ -46,6 +46,8 @@ export const leads = pgTable("leads", {
   email: text("email"),
   phone: text("phone"),
   message: text("message"),
+  source: text("source"),
+  country: text("country"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

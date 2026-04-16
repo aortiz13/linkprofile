@@ -33,6 +33,7 @@ import {
   AIGreetingEditor,
   CalComBlockEditor,
   CaseStudiesBlockEditor,
+  LeadMagnetBlockEditor,
 } from "@/components/admin/BlockEditorPanel";
 import type { Block } from "@/lib/db/schema";
 
@@ -268,6 +269,8 @@ function BlockEditorSwitch({ block, onUpdate }: { block: Block; onUpdate: (confi
       return <CalComBlockEditor block={block} onUpdate={onUpdate} />;
     case "case_studies":
       return <CaseStudiesBlockEditor block={block} onUpdate={onUpdate} />;
+    case "lead_magnet":
+      return <LeadMagnetBlockEditor block={block} onUpdate={onUpdate} />;
     default:
       return <p className="text-sm text-[var(--text-muted)]">Editor no disponible para este tipo de bloque.</p>;
   }

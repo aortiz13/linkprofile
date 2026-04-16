@@ -9,6 +9,7 @@ const leadSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1).optional().or(z.literal("")),
   message: z.string().optional().or(z.literal("")),
+  source: z.string().optional().or(z.literal("")),
 });
 
 export async function POST(req: Request) {
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
-    const { profileId, name, email, phone, message } = parsed.data;
+    const { profileId, name, email, phone, message, source } = parsed.data;
 
     // Verify phone or email is provided
     if (!email && !phone) {
@@ -30,6 +31,13 @@ export async function POST(req: Request) {
       );
     }
 
+    // Detect country from request headers (Cloudflare, Vercel, etc.)
+    const country =
+      req.headers.get("cf-ipcountry") ||
+      req.headers.get("x-vercel-ip-country") ||
+      req.headers.get("x-country") ||
+      null;
+
     const newLead = await db
       .insert(leads)
       .values({
@@ -38,6 +46,8 @@ export async function POST(req: Request) {
         email: email || null,
         phone: phone || null,
         message: message || null,
+        source: source || null,
+        country,
       })
       .returning();
 

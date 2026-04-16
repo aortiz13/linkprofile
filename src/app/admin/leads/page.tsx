@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Users, Mail, Phone, MessageSquare, Calendar } from "lucide-react";
+import { Users, Mail, Phone, MessageSquare, Calendar, Globe, Tag } from "lucide-react";
 import { useState } from "react";
 
 interface Lead {
@@ -12,6 +12,8 @@ interface Lead {
   email: string | null;
   phone: string | null;
   message: string | null;
+  source: string | null;
+  country: string | null;
   createdAt: string;
 }
 
@@ -22,8 +24,14 @@ export default function LeadsPage() {
   });
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filterSource, setFilterSource] = useState<string>("all");
 
-  const leads = data?.leads || [];
+  const allLeads = data?.leads || [];
+
+  // Get unique sources for filter
+  const sources = Array.from(new Set(allLeads.map((l) => l.source).filter(Boolean))) as string[];
+
+  const leads = filterSource === "all" ? allLeads : allLeads.filter((l) => l.source === filterSource);
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-8 w-full">
@@ -32,9 +40,39 @@ export default function LeadsPage() {
           Leads
         </h1>
         <p className="text-[var(--text-muted)] mt-1">
-          Gestiona los contactos capturados a través del formulario de tu perfil.
+          Gestiona los contactos capturados a través de formularios y lead magnets.
         </p>
       </div>
+
+      {/* Filter by source */}
+      {sources.length > 0 && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-xs font-medium text-[var(--text-muted)]">Filtrar:</span>
+          <button
+            onClick={() => setFilterSource("all")}
+            className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+              filterSource === "all"
+                ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+            }`}
+          >
+            Todos ({allLeads.length})
+          </button>
+          {sources.map((src) => (
+            <button
+              key={src}
+              onClick={() => setFilterSource(src)}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                filterSource === src
+                  ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                  : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)]"
+              }`}
+            >
+              {src.replace("lead_magnet:", "🎁 ")} ({allLeads.filter((l) => l.source === src).length})
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
@@ -49,7 +87,7 @@ export default function LeadsPage() {
             Aún no tienes leads
           </h3>
           <p className="text-[var(--text-muted)] max-w-sm mx-auto">
-            Cuando los usuarios llenen el formulario de contacto de tu perfil, aparecerán aquí.
+            Cuando los usuarios llenen el formulario de contacto o un lead magnet, aparecerán aquí.
           </p>
         </div>
       ) : (
@@ -60,6 +98,7 @@ export default function LeadsPage() {
                 <tr>
                   <th className="px-6 py-4 rounded-tl-[var(--radius-lg)]">Nombre</th>
                   <th className="px-6 py-4">Contacto</th>
+                  <th className="px-6 py-4">Fuente</th>
                   <th className="px-6 py-4">Mensaje</th>
                   <th className="px-6 py-4 rounded-tr-[var(--radius-lg)]">Fecha</th>
                 </tr>
@@ -73,6 +112,12 @@ export default function LeadsPage() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <p className="font-semibold">{lead.name}</p>
+                      {lead.country && (
+                        <div className="flex items-center gap-1 mt-0.5 text-[var(--text-muted)]">
+                          <Globe className="w-3 h-3" />
+                          <span className="text-[10px] uppercase">{lead.country}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       {lead.email && (
@@ -88,6 +133,16 @@ export default function LeadsPage() {
                             {lead.phone}
                           </a>
                         </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {lead.source ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-teal-500/10 text-teal-600">
+                          <Tag className="w-3 h-3" />
+                          {lead.source.replace("lead_magnet:", "")}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[var(--text-muted)] italic">Formulario</span>
                       )}
                     </td>
                     <td className="px-6 py-4 max-w-xs">
@@ -106,7 +161,7 @@ export default function LeadsPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-[var(--text-muted)] opacity-50 italic">Sin mensaje</span>
+                        <span className="text-[var(--text-muted)] opacity-50 italic">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
