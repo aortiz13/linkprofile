@@ -19,118 +19,131 @@ interface CaseStudiesBlockProps {
 }
 
 export function CaseStudiesBlock({ studies, baseUrl, onTrackClick }: CaseStudiesBlockProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const startX = useRef(0);
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
-
-  if (!studies.length) return null;
-
+  const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const total = studies.length;
 
-  const goTo = useCallback((idx: number) => {
-    setActiveIndex(((idx % total) + total) % total);
-  }, [total]);
+  if (!total) return null;
 
-  const next = useCallback(() => goTo(activeIndex + 1), [activeIndex, goTo]);
-  const prev = useCallback(() => goTo(activeIndex - 1), [activeIndex, goTo]);
+  const scrollToIndex = useCallback((idx: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const slide = el.children[idx] as HTMLElement | undefined;
+    if (!slide) return;
+    el.scrollTo({ left: slide.offsetLeft - el.offsetLeft, behavior: "smooth" });
+  }, []);
 
-  // Auto-play loop
+  // Track active slide from scroll position
+  const updateActiveFromScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const scrollCenter = el.scrollLeft + el.clientWidth / 2;
+    let closest = 0;
+    let closestDist = Infinity;
+    for (let i = 0; i < el.children.length; i++) {
+      const child = el.children[i] as HTMLElement;
+      const childCenter = child.offsetLeft - el.offsetLeft + child.offsetWidth / 2;
+      const dist = Math.abs(scrollCenter - childCenter);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    }
+    setActiveIndex(closest);
+  }, []);
+
+  // Auto-play: advance every 4.5s
+  const startAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+    autoPlayRef.current = setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % total;
+        scrollToIndex(next);
+        return next;
+      });
+    }, 4500);
+  }, [total, scrollToIndex]);
+
+  const stopAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
+  }, []);
+
   useEffect(() => {
-    autoPlayRef.current = setInterval(next, 4500);
-    return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
-  }, [next]);
+    startAutoPlay();
+    return stopAutoPlay;
+  }, [startAutoPlay, stopAutoPlay]);
 
-  const pauseAutoPlay = () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
-  const resumeAutoPlay = () => {
-    pauseAutoPlay();
-    autoPlayRef.current = setInterval(next, 4500);
-  };
-
-  // Touch / drag handling
-  const handleDragStart = (x: number) => { setIsDragging(true); startX.current = x; pauseAutoPlay(); };
-  const handleDragEnd = (x: number) => {
-    setIsDragging(false);
-    const diff = startX.current - x;
-    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
-    resumeAutoPlay();
+  // Pause auto-play while user is touching
+  const handleTouchStart = () => stopAutoPlay();
+  const handleTouchEnd = () => {
+    // Small delay to let scroll snap settle
+    setTimeout(updateActiveFromScroll, 150);
+    startAutoPlay();
   };
 
   return (
-    <div
-      className="w-full relative overflow-hidden"
-      onMouseEnter={pauseAutoPlay}
-      onMouseLeave={resumeAutoPlay}
-    >
-      {/* Slides container */}
+    <div className="w-full">
+      {/* Slides — native horizontal scroll with hidden scrollbar */}
       <div
-        className="relative"
-        style={{ touchAction: "pan-y" }}
-        onMouseDown={(e) => handleDragStart(e.clientX)}
-        onMouseUp={(e) => handleDragEnd(e.clientX)}
-        onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
-        onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
+        ref={scrollRef}
+        onScroll={updateActiveFromScroll}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseEnter={stopAutoPlay}
+        onMouseLeave={startAutoPlay}
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-1"
+        style={{
+          scrollbarWidth: "none",       /* Firefox */
+          msOverflowStyle: "none",      /* IE/Edge */
+          WebkitOverflowScrolling: "touch",
+        }}
       >
-        <motion.div
-          className="flex"
-          animate={{ x: `${-activeIndex * 100}%` }}
-          transition={{ type: "spring", stiffness: 300, damping: 35 }}
-          style={{ width: `${total * 100}%` }}
-        >
-          {studies.map((study, i) => {
-            const href = study.url || `${baseUrl || ""}/casos-de-exito/${study.id}`;
+        {/* Inline style to hide WebKit scrollbar */}
+        <style>{`.case-scroll::-webkit-scrollbar { display: none; }`}</style>
 
-            return (
-              <div
-                key={study.id}
-                className="px-2"
-                style={{ width: `${100 / total}%` }}
-              >
-                <motion.a
-                  href={href}
-                  onClick={(e) => {
-                    if (isDragging) { e.preventDefault(); return; }
-                    onTrackClick?.(href, study.title);
-                  }}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.06, duration: 0.4 }}
-                  className="block relative aspect-[3/4] rounded-[var(--radius-lg)] overflow-hidden group shadow-md cursor-pointer"
-                >
-                  {/* Image */}
-                  {study.image ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={study.image}
-                      alt={study.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/30 to-[var(--accent)]/10" />
-                  )}
+        {studies.map((study, i) => {
+          const href = study.url || `${baseUrl || ""}/casos-de-exito/${study.id}`;
 
-                  {/* Overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+          return (
+            <motion.a
+              key={study.id}
+              href={href}
+              onClick={() => onTrackClick?.(href, study.title)}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.06, duration: 0.4 }}
+              className="min-w-[85%] max-w-[320px] shrink-0 snap-center relative aspect-[3/4] rounded-[var(--radius-lg)] overflow-hidden group shadow-md cursor-pointer"
+            >
+              {/* Image */}
+              {study.image ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={study.image}
+                  alt={study.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/30 to-[var(--accent)]/10" />
+              )}
 
-                  {/* Content overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                      {study.client}
-                    </span>
-                    <h3 className="text-white font-bold text-base leading-snug line-clamp-3">
-                      {study.title}
-                    </h3>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-white/15 backdrop-blur-md rounded-full text-white w-fit mt-1 group-hover:bg-white/25 transition-colors">
-                      Ver caso <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </div>
-                </motion.a>
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+              {/* Content overlay */}
+              <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-2">
+                <span className="text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                  {study.client}
+                </span>
+                <h3 className="text-white font-bold text-base leading-snug line-clamp-3">
+                  {study.title}
+                </h3>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-white/15 backdrop-blur-md rounded-full text-white w-fit mt-1 group-hover:bg-white/25 transition-colors">
+                  Ver caso <ExternalLink className="w-3 h-3" />
+                </span>
               </div>
-            );
-          })}
-        </motion.div>
+            </motion.a>
+          );
+        })}
       </div>
 
       {/* Dot indicators */}
@@ -139,7 +152,7 @@ export function CaseStudiesBlock({ studies, baseUrl, onTrackClick }: CaseStudies
           {studies.map((_, i) => (
             <button
               key={i}
-              onClick={() => { goTo(i); resumeAutoPlay(); }}
+              onClick={() => { scrollToIndex(i); setActiveIndex(i); startAutoPlay(); }}
               className={`h-2 rounded-full transition-all duration-300 ${
                 i === activeIndex
                   ? "bg-[var(--accent)] w-6"
