@@ -6,9 +6,37 @@ export interface DateRange {
   from: Date;
   to: Date;
   profileId: string;
+  location?: string | null;
+  source?: string | null;
+  device?: string | null;
 }
 
-export async function getSummary({ from, to, profileId }: DateRange) {
+function buildFilterConditions(table: any, filters: { location?: string | null; source?: string | null; device?: string | null }) {
+  const conditions = [];
+  
+  if (filters.location) {
+    conditions.push(eq(table.country, filters.location));
+  }
+  
+  if (filters.device) {
+    conditions.push(eq(table.device, filters.device));
+  }
+  
+  if (filters.source) {
+    const s = filters.source.toLowerCase();
+    if (s === "direct") {
+      conditions.push(sql`(${table.referrer} IS NULL OR ${table.referrer} = '')`);
+    } else if (s === "twitter") {
+      conditions.push(sql`(${table.referrer} ILIKE ${'%twitter%'} OR ${table.referrer} ILIKE ${'%x.com%'})`);
+    } else {
+      conditions.push(sql`${table.referrer} ILIKE ${`%${s}%`}`);
+    }
+  }
+  
+  return conditions;
+}
+
+export async function getSummary({ from, to, profileId, location, source, device }: DateRange) {
   // Current period
   const [visitResult] = await db
     .select({
@@ -20,7 +48,8 @@ export async function getSummary({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
-        lte(pageViews.timestamp, to)
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     );
 
@@ -31,7 +60,8 @@ export async function getSummary({ from, to, profileId }: DateRange) {
       and(
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, from),
-        lte(linkClicks.timestamp, to)
+        lte(linkClicks.timestamp, to),
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     );
 
@@ -52,7 +82,8 @@ export async function getSummary({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, prevFrom),
-        lte(pageViews.timestamp, prevTo)
+        lte(pageViews.timestamp, prevTo),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     );
 
@@ -63,7 +94,8 @@ export async function getSummary({ from, to, profileId }: DateRange) {
       and(
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, prevFrom),
-        lte(linkClicks.timestamp, prevTo)
+        lte(linkClicks.timestamp, prevTo),
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     );
 
@@ -90,7 +122,8 @@ export async function getSummary({ from, to, profileId }: DateRange) {
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
         lte(pageViews.timestamp, to),
-        sql`${pageViews.country} IS NOT NULL`
+        sql`${pageViews.country} IS NOT NULL`,
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(pageViews.country, pageViews.countryName)
@@ -109,7 +142,8 @@ export async function getSummary({ from, to, profileId }: DateRange) {
       and(
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, from),
-        lte(linkClicks.timestamp, to)
+        lte(linkClicks.timestamp, to),
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     )
     .groupBy(links.title)
@@ -130,7 +164,7 @@ export async function getSummary({ from, to, profileId }: DateRange) {
   };
 }
 
-export async function getTimeseries({ from, to, profileId }: DateRange) {
+export async function getTimeseries({ from, to, profileId, location, source, device }: DateRange) {
   const visits = await db
     .select({
       date: sql<string>`DATE(${pageViews.timestamp})`.as("date"),
@@ -141,7 +175,8 @@ export async function getTimeseries({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
-        lte(pageViews.timestamp, to)
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(sql`DATE(${pageViews.timestamp})`)
@@ -157,7 +192,8 @@ export async function getTimeseries({ from, to, profileId }: DateRange) {
       and(
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, from),
-        lte(linkClicks.timestamp, to)
+        lte(linkClicks.timestamp, to),
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     )
     .groupBy(sql`DATE(${linkClicks.timestamp})`)
@@ -185,7 +221,7 @@ export async function getTimeseries({ from, to, profileId }: DateRange) {
     }));
 }
 
-export async function getCountries({ from, to, profileId }: DateRange) {
+export async function getCountries({ from, to, profileId, location, source, device }: DateRange) {
   const result = await db
     .select({
       country: pageViews.country,
@@ -198,7 +234,8 @@ export async function getCountries({ from, to, profileId }: DateRange) {
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
         lte(pageViews.timestamp, to),
-        sql`${pageViews.country} IS NOT NULL`
+        sql`${pageViews.country} IS NOT NULL`,
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(pageViews.country, pageViews.countryName)
@@ -214,7 +251,7 @@ export async function getCountries({ from, to, profileId }: DateRange) {
   }));
 }
 
-export async function getLinkStats({ from, to, profileId }: DateRange) {
+export async function getLinkStats({ from, to, profileId, location, source, device }: DateRange) {
   const result = await db
     .select({
       linkId: linkClicks.linkId,
@@ -231,7 +268,8 @@ export async function getLinkStats({ from, to, profileId }: DateRange) {
       and(
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, from),
-        lte(linkClicks.timestamp, to)
+        lte(linkClicks.timestamp, to),
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     )
     .groupBy(linkClicks.linkId, linkClicks.url, linkClicks.itemTitle, linkClicks.blockType, links.title, links.type)
@@ -247,7 +285,8 @@ export async function getLinkStats({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
-        lte(pageViews.timestamp, to)
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     );
 
@@ -266,7 +305,7 @@ export async function getLinkStats({ from, to, profileId }: DateRange) {
   });
 }
 
-export async function getDevices({ from, to, profileId }: DateRange) {
+export async function getDevices({ from, to, profileId, location, source, device }: DateRange) {
   const devices = await db
     .select({
       device: pageViews.device,
@@ -277,7 +316,8 @@ export async function getDevices({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
-        lte(pageViews.timestamp, to)
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(pageViews.device)
@@ -293,7 +333,8 @@ export async function getDevices({ from, to, profileId }: DateRange) {
       and(
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, from),
-        lte(linkClicks.timestamp, to)
+        lte(linkClicks.timestamp, to),
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     )
     .groupBy(linkClicks.device);
@@ -315,7 +356,8 @@ export async function getDevices({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
-        lte(pageViews.timestamp, to)
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(pageViews.browser)
@@ -332,7 +374,8 @@ export async function getDevices({ from, to, profileId }: DateRange) {
       and(
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
-        lte(pageViews.timestamp, to)
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(pageViews.os)
@@ -342,7 +385,7 @@ export async function getDevices({ from, to, profileId }: DateRange) {
   return { devices: devicesWithClicks, browsers, os: osStats };
 }
 
-export async function getSources({ from, to, profileId }: DateRange) {
+export async function getSources({ from, to, profileId, location, source, device }: DateRange) {
   const result = await db
     .select({
       referrer: pageViews.referrer,
@@ -354,7 +397,8 @@ export async function getSources({ from, to, profileId }: DateRange) {
         eq(pageViews.profileId, profileId),
         gte(pageViews.timestamp, from),
         lte(pageViews.timestamp, to),
-        sql`${pageViews.referrer} IS NOT NULL AND ${pageViews.referrer} != ''`
+        sql`${pageViews.referrer} IS NOT NULL AND ${pageViews.referrer} != ''`,
+        ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
     .groupBy(pageViews.referrer)
@@ -372,7 +416,8 @@ export async function getSources({ from, to, profileId }: DateRange) {
         eq(linkClicks.profileId, profileId),
         gte(linkClicks.timestamp, from),
         lte(linkClicks.timestamp, to),
-        sql`${linkClicks.referrer} IS NOT NULL AND ${linkClicks.referrer} != ''`
+        sql`${linkClicks.referrer} IS NOT NULL AND ${linkClicks.referrer} != ''`,
+        ...buildFilterConditions(linkClicks, { location, source, device })
       )
     )
     .groupBy(linkClicks.referrer)

@@ -11,7 +11,10 @@ export async function GET(req: NextRequest) {
     ? new Date(searchParams.get("from")!)
     : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : new Date();
+  const location = searchParams.get("location");
+  const source = searchParams.get("source");
+  const device = searchParams.get("device");
 
-  const data = await getSources({ from, to, profileId: user.profileId });
+  const data = await getSources({ from, to, profileId: user.profileId, location, source, device });
   return NextResponse.json(data);
 }

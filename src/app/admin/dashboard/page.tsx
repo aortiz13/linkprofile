@@ -201,8 +201,20 @@ export default function AnalyticsPage() {
   const buildParams = () => {
     const from = subDays(new Date(), activeDays).toISOString();
     const to = new Date().toISOString();
-    return `?from=${from}&to=${to}`;
+    const params = new URLSearchParams({ from, to });
+    if (activeFilters.includes("location") && filterValues.location) {
+      params.append("location", filterValues.location);
+    }
+    if (activeFilters.includes("source") && filterValues.source) {
+      params.append("source", filterValues.source);
+    }
+    if (activeFilters.includes("device") && filterValues.device) {
+      params.append("device", filterValues.device);
+    }
+    return `?${params.toString()}`;
   };
+
+  const queryDeps = [activeDays, activeFilters, filterValues];
 
   const queryOpts = {
     refetchInterval: 30_000,
@@ -211,42 +223,42 @@ export default function AnalyticsPage() {
   };
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ["analytics-summary", activeDays],
+    queryKey: ["analytics-summary", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/summary${buildParams()}`).then((r) => r.json()),
     ...queryOpts,
   });
 
   const { data: timeseries } = useQuery({
-    queryKey: ["analytics-timeseries", activeDays],
+    queryKey: ["analytics-timeseries", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/timeseries${buildParams()}`).then((r) => r.json()),
     ...queryOpts,
   });
 
   const { data: countries } = useQuery({
-    queryKey: ["analytics-countries", activeDays],
+    queryKey: ["analytics-countries", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/countries${buildParams()}`).then((r) => r.json()),
     ...queryOpts,
   });
 
   const { data: linkStats } = useQuery({
-    queryKey: ["analytics-links", activeDays],
+    queryKey: ["analytics-links", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/links${buildParams()}`).then((r) => r.json()),
     ...queryOpts,
   });
 
   const { data: deviceData } = useQuery({
-    queryKey: ["analytics-devices", activeDays],
+    queryKey: ["analytics-devices", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/devices${buildParams()}`).then((r) => r.json()),
     ...queryOpts,
   });
 
   const { data: sources } = useQuery({
-    queryKey: ["analytics-sources", activeDays],
+    queryKey: ["analytics-sources", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/sources${buildParams()}`).then((r) => r.json()),
     ...queryOpts,
@@ -479,7 +491,11 @@ export default function AnalyticsPage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {opt?.label}: {filterValues[f] || "Todos"}
+                  {opt?.label}: {
+                    f === "location" && countries?.find((c: any) => c.country === filterValues[f])?.countryName 
+                      ? countries.find((c: any) => c.country === filterValues[f]).countryName 
+                      : filterValues[f] || "Todos"
+                  }
                   <button
                     onClick={() => {
                       setActiveFilters((prev) => prev.filter((x) => x !== f));
@@ -615,7 +631,7 @@ export default function AnalyticsPage() {
                             key={c.country}
                             onClick={() => {
                               setActiveFilters((prev) => [...prev, "location"]);
-                              setFilterValues((prev) => ({ ...prev, location: c.countryName }));
+                              setFilterValues((prev) => ({ ...prev, location: c.country }));
                               setShowFilterDropdown(false);
                               setShowFilterSubMenu(null);
                             }}
