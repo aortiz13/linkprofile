@@ -11,6 +11,7 @@ import { ProductsBlock } from "./ProductsBlock";
 import { GeoCustomBlock } from "./GeoCustomBlock";
 import { AIGreeting } from "./AIGreeting";
 import { CalComBlock } from "./CalComBlock";
+import { CaseStudiesBlock } from "./CaseStudiesBlock";
 import type { Block, Profile, Link } from "@/lib/db/schema";
 import { getOrCreateSessionId } from "./LinkCard";
 
@@ -109,6 +110,18 @@ export function BlockRenderer({ block, profile, links, aiFeatures }: BlockRender
     case "cal_com": {
       const calConfig = (config.calData || {}) as Record<string, any>;
       return <CalComBlock {...calConfig} />;
+    }
+
+    case "case_studies": {
+      const studies = ((config.studies as any[]) || []).filter((s: any) => s.visible !== false);
+      const baseUrl = (config.baseUrl as string) || "https://brandboost.ai";
+      return (
+        <CaseStudiesBlock
+          studies={studies}
+          baseUrl={baseUrl}
+          onTrackClick={(url, title) => handleTrackClick(url, title, "case_studies")}
+        />
+      );
     }
 
     default:

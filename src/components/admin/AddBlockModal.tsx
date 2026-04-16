@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Link2, Type, Video, Minus, AtSign, Search, Sparkles, Calendar } from "lucide-react";
+import { X, Link2, Type, Video, Minus, AtSign, Search, Sparkles, Calendar, Presentation } from "lucide-react";
 import { useState } from "react";
 
 const BLOCK_TYPES = [
@@ -84,6 +84,14 @@ const BLOCK_TYPES = [
     icon: Calendar,
     color: "#1d4ed8",
     category: "grow",
+  },
+  {
+    type: "case_studies",
+    label: "Casos de Estudio",
+    description: "Slides con casos de éxito importados desde Brandboost.",
+    icon: Presentation,
+    color: "#f97316",
+    category: "content",
   },
 ];
 

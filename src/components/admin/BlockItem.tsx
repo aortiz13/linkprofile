@@ -16,6 +16,7 @@ import {
   AtSign,
   LayoutDashboard,
   Calendar,
+  Presentation,
 } from "lucide-react";
 import type { Block } from "@/lib/db/schema";
 
@@ -28,6 +29,7 @@ const BLOCK_ICONS: Record<string, React.ElementType> = {
   contact_form: AtSign,
   social_icons: AtSign,
   cal_com: Calendar,
+  case_studies: Presentation,
 };
 
 const BLOCK_COLORS: Record<string, string> = {
@@ -39,6 +41,7 @@ const BLOCK_COLORS: Record<string, string> = {
   contact_form: "#8b5cf6",
   social_icons: "#ec4899",
   cal_com: "#1d4ed8",
+  case_studies: "#f97316",
 };
 
 interface BlockItemProps {

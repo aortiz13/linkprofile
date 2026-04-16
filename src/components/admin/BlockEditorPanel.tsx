@@ -1136,3 +1136,213 @@ export function CalComBlockEditor({ block, onUpdate }: { block: Block; onUpdate:
     </div>
   );
 }
+
+// ─── Case Studies (Slides) Block Editor ──────────────────────────────────────
+interface CaseStudy {
+  id: string;
+  client: string;
+  title: string;
+  image: string;
+  visible: boolean;
+}
+
+export function CaseStudiesBlockEditor({ block, onUpdate }: { block: Block; onUpdate: (config: Record<string, unknown>) => void }) {
+  const config = block.config as { studies?: CaseStudy[]; baseUrl?: string };
+  const studies: CaseStudy[] = config.studies || [];
+  const baseUrl = config.baseUrl || "https://brandboost.ai";
+  const [syncing, setSyncing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/admin/case-studies");
+      const data = await res.json();
+      if (data.studies) {
+        // Merge: keep existing edits, add new ones
+        const existingMap = new Map(studies.map((s) => [s.id, s]));
+        const merged: CaseStudy[] = data.studies.map((s: CaseStudy) => {
+          const existing = existingMap.get(s.id);
+          return existing
+            ? { ...s, title: existing.title, visible: existing.visible }
+            : { ...s, visible: true };
+        });
+        onUpdate({ studies: merged, baseUrl });
+      }
+    } catch (err) {
+      console.error("Sync error:", err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleRemove = (id: string) => {
+    onUpdate({ studies: studies.filter((s) => s.id !== id), baseUrl });
+  };
+
+  const handleToggleVisible = (id: string) => {
+    onUpdate({
+      studies: studies.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s)),
+      baseUrl,
+    });
+  };
+
+  const handleSaveTitle = (id: string) => {
+    onUpdate({
+      studies: studies.map((s) => (s.id === id ? { ...s, title: editTitle } : s)),
+      baseUrl,
+    });
+    setEditingId(null);
+  };
+
+  const handleMoveUp = (idx: number) => {
+    if (idx === 0) return;
+    const arr = [...studies];
+    [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+    onUpdate({ studies: arr, baseUrl });
+  };
+
+  const handleMoveDown = (idx: number) => {
+    if (idx === studies.length - 1) return;
+    const arr = [...studies];
+    [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+    onUpdate({ studies: arr, baseUrl });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Base URL */}
+      <div>
+        <label className="block text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">
+          URL base del sitio
+        </label>
+        <input
+          type="text"
+          value={baseUrl}
+          onChange={(e) => onUpdate({ studies, baseUrl: e.target.value })}
+          placeholder="https://brandboost.ai"
+          className="w-full px-3 py-2 text-sm bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--accent)]"
+        />
+      </div>
+
+      {/* Sync Button */}
+      <button
+        onClick={handleSync}
+        disabled={syncing}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[var(--radius-md)] bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-light)] disabled:opacity-60 transition-all"
+      >
+        {syncing ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+          </svg>
+        )}
+        {syncing ? "Sincronizando..." : "Sincronizar desde GitHub"}
+      </button>
+
+      {/* Studies list */}
+      {studies.length === 0 ? (
+        <p className="text-sm text-[var(--text-muted)] text-center py-6">
+          Haz clic en &quot;Sincronizar&quot; para importar casos de estudio desde Brandboost.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">
+            {studies.filter((s) => s.visible).length} de {studies.length} visibles
+          </p>
+          {studies.map((study, idx) => (
+            <div
+              key={study.id}
+              className={`flex items-start gap-3 p-3 rounded-[var(--radius-md)] border transition-all ${
+                !study.visible
+                  ? "opacity-50 border-[var(--border)]"
+                  : "border-[var(--border)] hover:border-[var(--border-hover)]"
+              }`}
+            >
+              {/* Thumbnail */}
+              <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-neutral-100 dark:bg-neutral-800">
+                {study.image ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={study.image} alt={study.client} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-[var(--text-muted)]">?</div>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                {editingId === study.id ? (
+                  <div className="flex gap-2">
+                    <input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="flex-1 px-2 py-1 text-sm bg-[var(--bg-elevated)] border border-[var(--accent)] rounded-[var(--radius-sm)] focus:outline-none"
+                      autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveTitle(study.id)}
+                    />
+                    <button
+                      onClick={() => handleSaveTitle(study.id)}
+                      className="px-2 py-1 text-xs bg-[var(--accent)] text-white rounded-[var(--radius-sm)]"
+                    >
+                      <Save className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setEditingId(study.id); setEditTitle(study.title); }}
+                    className="text-sm font-medium text-left line-clamp-2 hover:text-[var(--accent)] transition-colors"
+                    title="Clic para editar título"
+                  >
+                    {study.title || study.client}
+                  </button>
+                )}
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">{study.client}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-1 shrink-0">
+                <button
+                  onClick={() => handleMoveUp(idx)}
+                  disabled={idx === 0}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] disabled:opacity-30 transition-colors"
+                  title="Subir"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                </button>
+                <button
+                  onClick={() => handleMoveDown(idx)}
+                  disabled={idx === studies.length - 1}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] disabled:opacity-30 transition-colors"
+                  title="Bajar"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <button
+                  onClick={() => handleToggleVisible(study.id)}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                  title={study.visible ? "Ocultar" : "Mostrar"}
+                >
+                  {study.visible ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleRemove(study.id)}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
