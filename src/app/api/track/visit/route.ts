@@ -10,7 +10,7 @@ import { eq, and, gte } from "drizzle-orm";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sessionId, referrer } = body;
+    const { sessionId, referrer, utmSource, utmMedium, utmCampaign } = body;
 
     if (!sessionId) {
       return new NextResponse(null, { status: 400 });
@@ -59,6 +59,43 @@ export async function POST(req: NextRequest) {
       return new NextResponse(null, { status: 204 });
     }
 
+    // Build effective referrer — TikTok/Instagram in-app browsers often
+    // strip document.referrer, so we fall back to utm_source and the
+    // server-side Referer header.
+    const UTM_SOURCE_MAP: Record<string, string> = {
+      instagram: "https://instagram.com",
+      tiktok: "https://tiktok.com",
+      facebook: "https://facebook.com",
+      twitter: "https://twitter.com",
+      youtube: "https://youtube.com",
+      linkedin: "https://linkedin.com",
+      whatsapp: "https://whatsapp.com",
+      google: "https://google.com",
+      threads: "https://threads.net",
+    };
+    const serverReferer = req.headers.get("referer") || null;
+    let effectiveReferrer = referrer || null;
+
+    if (!effectiveReferrer && utmSource) {
+      // Map known utm_source values to canonical URLs for consistent analytics
+      effectiveReferrer =
+        UTM_SOURCE_MAP[utmSource.toLowerCase()] || utmSource;
+    }
+    if (!effectiveReferrer && serverReferer) {
+      // Use server-side Referer header as last resort (some in-app
+      // browsers do send it even when JS document.referrer is empty)
+      try {
+        const refUrl = new URL(serverReferer);
+        // Ignore self-referrals
+        const host = refUrl.hostname.replace("www.", "");
+        if (!host.includes("localhost")) {
+          effectiveReferrer = serverReferer;
+        }
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+
     // Insert page view
     await db.insert(pageViews).values({
       profileId: profile.id,
@@ -70,7 +107,7 @@ export async function POST(req: NextRequest) {
       device: deviceType === "mobile" ? "mobile" : deviceType === "tablet" ? "tablet" : "desktop",
       os,
       browser,
-      referrer: referrer || null,
+      referrer: effectiveReferrer,
       userAgent: userAgent.slice(0, 500), // Limit stored UA length
     });
 

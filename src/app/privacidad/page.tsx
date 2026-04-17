@@ -29,6 +29,7 @@ export default function PrivacidadPage() {
         </p>
 
         <div className="space-y-10 text-[15px] leading-relaxed">
+          {/* 1 */}
           <Section title="1. Responsable del Tratamiento de Datos">
             <p>
               El responsable del tratamiento de los datos personales recogidos a través de este sitio web es:
@@ -41,6 +42,7 @@ export default function PrivacidadPage() {
             </ul>
           </Section>
 
+          {/* 2 */}
           <Section title="2. Datos que Recopilamos">
             <p>Recopilamos los siguientes tipos de información:</p>
 
@@ -69,6 +71,7 @@ export default function PrivacidadPage() {
             </ul>
           </Section>
 
+          {/* 3 */}
           <Section title="3. Finalidad del Tratamiento">
             <p>Los datos personales recopilados se utilizan exclusivamente para:</p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
@@ -98,6 +101,7 @@ export default function PrivacidadPage() {
             </ul>
           </Section>
 
+          {/* 4 */}
           <Section title="4. Base Legal del Tratamiento">
             <p>El tratamiento de tus datos se fundamenta en las siguientes bases legales:</p>
             <ul className="list-disc pl-5 space-y-2 mt-3">
@@ -119,6 +123,7 @@ export default function PrivacidadPage() {
             </ul>
           </Section>
 
+          {/* 5 */}
           <Section title="5. Conservación de los Datos">
             <p>
               Tus datos personales se conservarán durante el tiempo necesario para cumplir con la
@@ -143,6 +148,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 6 */}
           <Section title="6. Tus Derechos">
             <p>
               De acuerdo con el Reglamento General de Protección de Datos (RGPD) y la legislación
@@ -192,6 +198,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 7 */}
           <Section title="7. Seguridad de los Datos">
             <p>
               Implementamos medidas técnicas y organizativas adecuadas para proteger tus datos
@@ -207,6 +214,7 @@ export default function PrivacidadPage() {
             </ul>
           </Section>
 
+          {/* 8 */}
           <Section title="8. Servicios de Terceros">
             <p>
               Para el correcto funcionamiento de nuestro sitio web y servicios, utilizamos los
@@ -235,6 +243,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 9 */}
           <Section title="9. Cookies y Tecnologías de Seguimiento">
             <p>
               Nuestro sitio web puede utilizar cookies técnicas y funcionales estrictamente
@@ -249,6 +258,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 10 */}
           <Section title="10. Transferencias Internacionales">
             <p>
               Los datos recopilados pueden ser almacenados y procesados en servidores ubicados
@@ -259,6 +269,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 11 */}
           <Section title="11. Menores de Edad">
             <p>
               Nuestros servicios no están dirigidos a menores de 16 años. No recopilamos
@@ -268,6 +279,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 12 */}
           <Section title="12. Modificaciones de esta Política">
             <p>
               Nos reservamos el derecho de actualizar esta política de privacidad en cualquier
@@ -281,6 +293,7 @@ export default function PrivacidadPage() {
             </p>
           </Section>
 
+          {/* 13 */}
           <Section title="13. Contacto">
             <p>
               Si tienes preguntas, inquietudes o deseas ejercer cualquiera de tus derechos en
@@ -309,6 +322,7 @@ export default function PrivacidadPage() {
             </ul>
           </Section>
 
+          {/* 14 */}
           <Section title="14. Autoridad de Control">
             <p>
               Si consideras que el tratamiento de tus datos personales no se ajusta a la normativa

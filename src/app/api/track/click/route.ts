@@ -9,7 +9,7 @@ import { createHash } from "crypto";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { linkId, sessionId, url, itemTitle, blockType, profileId } = body;
+    const { linkId, sessionId, url, itemTitle, blockType, profileId, referrer: clientReferrer, utmSource } = body;
 
     if ((!linkId && !url) || !sessionId) {
       return new NextResponse(null, { status: 400 });
@@ -48,6 +48,37 @@ export async function POST(req: NextRequest) {
       targetProfileId = profile.id;
     }
 
+    // Build effective referrer — same logic as visit tracking
+    const UTM_SOURCE_MAP: Record<string, string> = {
+      instagram: "https://instagram.com",
+      tiktok: "https://tiktok.com",
+      facebook: "https://facebook.com",
+      twitter: "https://twitter.com",
+      youtube: "https://youtube.com",
+      linkedin: "https://linkedin.com",
+      whatsapp: "https://whatsapp.com",
+      google: "https://google.com",
+      threads: "https://threads.net",
+    };
+    const serverReferer = req.headers.get("referer") || null;
+    let effectiveReferrer = clientReferrer || null;
+
+    if (!effectiveReferrer && utmSource) {
+      effectiveReferrer =
+        UTM_SOURCE_MAP[utmSource.toLowerCase()] || utmSource;
+    }
+    if (!effectiveReferrer && serverReferer) {
+      try {
+        const refUrl = new URL(serverReferer);
+        const host = refUrl.hostname.replace("www.", "");
+        if (!host.includes("localhost")) {
+          effectiveReferrer = serverReferer;
+        }
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+
     // Insert click
     await db.insert(linkClicks).values({
       linkId: linkId || null,
@@ -61,7 +92,7 @@ export async function POST(req: NextRequest) {
       device: deviceType === "mobile" ? "mobile" : deviceType === "tablet" ? "tablet" : "desktop",
       os,
       browser,
-      referrer: req.headers.get("referer") || null,
+      referrer: effectiveReferrer,
     });
 
     return new NextResponse(null, { status: 204 });

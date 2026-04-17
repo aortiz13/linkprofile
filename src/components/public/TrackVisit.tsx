@@ -22,12 +22,22 @@ export function TrackVisit() {
       sessionStorage.getItem("lp_session_id") || crypto.randomUUID();
     sessionStorage.setItem("lp_session_id", sessionId);
 
+    // Extract UTM params — TikTok/Instagram strip document.referrer in
+    // their in-app browsers, so utm_source is the reliable fallback.
+    const params = new URLSearchParams(window.location.search);
+    const utmSource = params.get("utm_source") || null;
+    const utmMedium = params.get("utm_medium") || null;
+    const utmCampaign = params.get("utm_campaign") || null;
+
     fetch("/api/track/visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sessionId,
         referrer: document.referrer || null,
+        utmSource,
+        utmMedium,
+        utmCampaign,
       }),
     })
       .then(() => sessionStorage.setItem(key, "1"))
