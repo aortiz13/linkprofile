@@ -29,7 +29,7 @@ import {
   Smartphone,
   X,
 } from "lucide-react";
-import { format, subDays, startOfWeek, startOfMonth, getWeek, getMonth, getYear } from "date-fns";
+import { format, subDays, subHours, startOfWeek, startOfMonth, getWeek, getMonth, getYear } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   ComposableMap,
@@ -165,6 +165,7 @@ function SectionHeader({
 // ─── Main Analytics Page ─────────────────────────────────────────
 // ─── View Mode Config ────────────────────────────────────────────
 const VIEW_MODES = [
+  { key: "hourly" as const, label: "Hourly" },
   { key: "daily" as const, label: "Daily" },
   { key: "weekly" as const, label: "Weekly" },
   { key: "monthly" as const, label: "Monthly" },
@@ -176,7 +177,7 @@ const FILTER_OPTIONS = [
   { key: "device" as const, label: "Device", icon: Smartphone },
 ];
 
-type ViewMode = "daily" | "weekly" | "monthly";
+type ViewMode = "hourly" | "daily" | "weekly" | "monthly";
 type FilterType = "location" | "source" | "device";
 
 export default function AnalyticsPage() {
@@ -198,10 +199,14 @@ export default function AnalyticsPage() {
     device: null,
   });
 
-  const buildParams = () => {
-    const from = subDays(new Date(), activeDays).toISOString();
+  const buildParams = (opts?: { forTimeseries?: boolean }) => {
+    const isHourlyTs = opts?.forTimeseries && viewMode === "hourly";
+    const from = isHourlyTs
+      ? subHours(new Date(), 24).toISOString()
+      : subDays(new Date(), activeDays).toISOString();
     const to = new Date().toISOString();
     const params = new URLSearchParams({ from, to });
+    if (isHourlyTs) params.append("granularity", "hourly");
     if (activeFilters.includes("location") && filterValues.location) {
       params.append("location", filterValues.location);
     }
@@ -214,7 +219,7 @@ export default function AnalyticsPage() {
     return `?${params.toString()}`;
   };
 
-  const queryDeps = [activeDays, activeFilters, filterValues];
+  const queryDeps = [activeDays, activeFilters, filterValues, viewMode];
 
   const queryOpts = {
     refetchInterval: 30_000,
@@ -232,7 +237,7 @@ export default function AnalyticsPage() {
   const { data: timeseries } = useQuery({
     queryKey: ["analytics-timeseries", ...queryDeps],
     queryFn: () =>
-      fetch(`/api/analytics/timeseries${buildParams()}`).then((r) => r.json()),
+      fetch(`/api/analytics/timeseries${buildParams({ forTimeseries: true })}`).then((r) => r.json()),
     ...queryOpts,
   });
 
@@ -266,7 +271,7 @@ export default function AnalyticsPage() {
 
   // Aggregate timeseries by view mode
   const aggregatedTimeseries = useMemo(() => {
-    if (!timeseries || viewMode === "daily") return timeseries || [];
+    if (!timeseries || viewMode === "daily" || viewMode === "hourly") return timeseries || [];
 
     const grouped = new Map<string, { visits: number; clicks: number }>();
 
@@ -865,9 +870,15 @@ export default function AnalyticsPage() {
                 tick={{ fill: "var(--text-muted)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(d) =>
-                  format(new Date(d), "dd MMM", { locale: es })
-                }
+                tickFormatter={(d) => {
+                  if (viewMode === "hourly") {
+                    // d is like "2026-04-17 14:00" — show "14:00"
+                    const parts = d.split(" ");
+                    return parts[1] || d;
+                  }
+                  return format(new Date(d), "dd MMM", { locale: es });
+                }}
+                interval={viewMode === "hourly" ? 2 : undefined}
               />
               <YAxis
                 tick={{ fill: "var(--text-muted)", fontSize: 11 }}

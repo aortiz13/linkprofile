@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getTimeseries } from "@/lib/analytics-queries";
+import { getTimeseries, getTimeseriesHourly } from "@/lib/analytics-queries";
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -14,7 +14,13 @@ export async function GET(req: NextRequest) {
   const location = searchParams.get("location");
   const source = searchParams.get("source");
   const device = searchParams.get("device");
+  const granularity = searchParams.get("granularity"); // "hourly" | null
 
-  const data = await getTimeseries({ from, to, profileId: user.profileId, location, source, device });
+  const params = { from, to, profileId: user.profileId, location, source, device };
+
+  const data = granularity === "hourly"
+    ? await getTimeseriesHourly(params)
+    : await getTimeseries(params);
+
   return NextResponse.json(data);
 }

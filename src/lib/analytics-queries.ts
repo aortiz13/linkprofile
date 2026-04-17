@@ -221,6 +221,67 @@ export async function getTimeseries({ from, to, profileId, location, source, dev
     }));
 }
 
+export async function getTimeseriesHourly({ from, to, profileId, location, source, device }: DateRange) {
+  // The client sends the timezone offset so we can group by local hour
+  const visits = await db
+    .select({
+      hour: sql<string>`to_char(${pageViews.timestamp}, 'YYYY-MM-DD HH24:00')`.as("hour"),
+      count: count(),
+    })
+    .from(pageViews)
+    .where(
+      and(
+        eq(pageViews.profileId, profileId),
+        gte(pageViews.timestamp, from),
+        lte(pageViews.timestamp, to),
+        ...buildFilterConditions(pageViews, { location, source, device })
+      )
+    )
+    .groupBy(sql`to_char(${pageViews.timestamp}, 'YYYY-MM-DD HH24:00')`)
+    .orderBy(sql`to_char(${pageViews.timestamp}, 'YYYY-MM-DD HH24:00')`);
+
+  const clicks = await db
+    .select({
+      hour: sql<string>`to_char(${linkClicks.timestamp}, 'YYYY-MM-DD HH24:00')`.as("hour"),
+      count: count(),
+    })
+    .from(linkClicks)
+    .where(
+      and(
+        eq(linkClicks.profileId, profileId),
+        gte(linkClicks.timestamp, from),
+        lte(linkClicks.timestamp, to),
+        ...buildFilterConditions(linkClicks, { location, source, device })
+      )
+    )
+    .groupBy(sql`to_char(${linkClicks.timestamp}, 'YYYY-MM-DD HH24:00')`)
+    .orderBy(sql`to_char(${linkClicks.timestamp}, 'YYYY-MM-DD HH24:00')`);
+
+  const visitMap = new Map(visits.map((v) => [v.hour, v.count]));
+  const clickMap = new Map(clicks.map((c) => [c.hour, c.count]));
+  const allHours = new Set([...visitMap.keys(), ...clickMap.keys()]);
+
+  // Fill in all hours between from and to
+  const current = new Date(from);
+  current.setMinutes(0, 0, 0);
+  while (current <= to) {
+    const y = current.getUTCFullYear();
+    const m = String(current.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(current.getUTCDate()).padStart(2, "0");
+    const h = String(current.getUTCHours()).padStart(2, "0");
+    allHours.add(`${y}-${m}-${d} ${h}:00`);
+    current.setTime(current.getTime() + 60 * 60 * 1000);
+  }
+
+  return Array.from(allHours)
+    .sort()
+    .map((hour) => ({
+      date: hour,
+      visits: visitMap.get(hour) || 0,
+      clicks: clickMap.get(hour) || 0,
+    }));
+}
+
 export async function getCountries({ from, to, profileId, location, source, device }: DateRange) {
   const result = await db
     .select({
