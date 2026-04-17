@@ -208,7 +208,6 @@ export default function AnalyticsPage() {
     const params = new URLSearchParams({ from, to });
     if (isHourlyTs) {
       params.append("granularity", "hourly");
-      params.append("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
     }
     if (activeFilters.includes("location") && filterValues.location) {
       params.append("location", filterValues.location);
@@ -875,9 +874,11 @@ export default function AnalyticsPage() {
                 tickLine={false}
                 tickFormatter={(d) => {
                   if (viewMode === "hourly") {
-                    // d is like "2026-04-17 14:00" — show "14:00"
-                    const parts = d.split(" ");
-                    return parts[1] || d;
+                    // d is "2026-04-17 14:00" (UTC) — convert to local time
+                    const utcDate = new Date(d.replace(" ", "T") + ":00Z");
+                    const hh = String(utcDate.getHours()).padStart(2, "0");
+                    const mm = String(utcDate.getMinutes()).padStart(2, "0");
+                    return `${hh}:${mm}`;
                   }
                   return format(new Date(d), "dd MMM", { locale: es });
                 }}

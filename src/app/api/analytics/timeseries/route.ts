@@ -14,10 +14,9 @@ export async function GET(req: NextRequest) {
   const location = searchParams.get("location");
   const source = searchParams.get("source");
   const device = searchParams.get("device");
-  const granularity = searchParams.get("granularity"); // "hourly" | null
-  const timezone = searchParams.get("timezone"); // e.g. "America/Argentina/Buenos_Aires"
+  const granularity = searchParams.get("granularity");
 
-  const params = { from, to, profileId: user.profileId, location, source, device, timezone };
+  const params = { from, to, profileId: user.profileId, location, source, device };
 
   const data = granularity === "hourly"
     ? await getTimeseriesHourly(params)

@@ -222,12 +222,10 @@ export async function getTimeseries({ from, to, profileId, location, source, dev
     }));
 }
 
-export async function getTimeseriesHourly({ from, to, profileId, location, source, device, timezone }: DateRange) {
-  const tz = timezone || "UTC";
-
+export async function getTimeseriesHourly({ from, to, profileId, location, source, device }: DateRange) {
   const visits = await db
     .select({
-      hour: sql<string>`to_char(${pageViews.timestamp} AT TIME ZONE ${tz}, 'YYYY-MM-DD HH24:00')`.as("hour"),
+      hour: sql<string>`to_char(${pageViews.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`.as("hour"),
       count: count(),
     })
     .from(pageViews)
@@ -239,12 +237,12 @@ export async function getTimeseriesHourly({ from, to, profileId, location, sourc
         ...buildFilterConditions(pageViews, { location, source, device })
       )
     )
-    .groupBy(sql`to_char(${pageViews.timestamp} AT TIME ZONE ${tz}, 'YYYY-MM-DD HH24:00')`)
-    .orderBy(sql`to_char(${pageViews.timestamp} AT TIME ZONE ${tz}, 'YYYY-MM-DD HH24:00')`);
+    .groupBy(sql`to_char(${pageViews.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`)
+    .orderBy(sql`to_char(${pageViews.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`);
 
   const clicks = await db
     .select({
-      hour: sql<string>`to_char(${linkClicks.timestamp} AT TIME ZONE ${tz}, 'YYYY-MM-DD HH24:00')`.as("hour"),
+      hour: sql<string>`to_char(${linkClicks.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`.as("hour"),
       count: count(),
     })
     .from(linkClicks)
@@ -256,24 +254,22 @@ export async function getTimeseriesHourly({ from, to, profileId, location, sourc
         ...buildFilterConditions(linkClicks, { location, source, device })
       )
     )
-    .groupBy(sql`to_char(${linkClicks.timestamp} AT TIME ZONE ${tz}, 'YYYY-MM-DD HH24:00')`)
-    .orderBy(sql`to_char(${linkClicks.timestamp} AT TIME ZONE ${tz}, 'YYYY-MM-DD HH24:00')`);
+    .groupBy(sql`to_char(${linkClicks.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`)
+    .orderBy(sql`to_char(${linkClicks.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`);
 
   const visitMap = new Map(visits.map((v) => [v.hour, v.count]));
   const clickMap = new Map(clicks.map((c) => [c.hour, c.count]));
   const allHours = new Set([...visitMap.keys(), ...clickMap.keys()]);
 
-  // Fill in all hours between from and to using local time
+  // Fill in all hours between from and to (UTC)
   const current = new Date(from);
-  current.setMinutes(0, 0, 0);
+  current.setUTCMinutes(0, 0, 0);
   while (current <= to) {
-    // Convert to local time string using the timezone
-    const localStr = current.toLocaleString("sv-SE", { timeZone: tz, hour12: false });
-    // localStr is like "2026-04-17 08:00:00" — truncate to "2026-04-17 08:00"
-    const hourStr = localStr.slice(0, 16).replace("T", " ");
-    // Normalize to "YYYY-MM-DD HH:00" format
-    const parts = hourStr.split(":");
-    allHours.add(`${parts[0]}:00`);
+    const y = current.getUTCFullYear();
+    const m = String(current.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(current.getUTCDate()).padStart(2, "0");
+    const h = String(current.getUTCHours()).padStart(2, "0");
+    allHours.add(`${y}-${m}-${d} ${h}:00`);
     current.setTime(current.getTime() + 60 * 60 * 1000);
   }
 
