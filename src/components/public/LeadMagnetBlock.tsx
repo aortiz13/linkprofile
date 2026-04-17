@@ -56,9 +56,18 @@ export function LeadMagnetBlock({
 
       if (res.ok) {
         setSuccess(true);
-        // Open the resource in a new tab
+        // Trigger download immediately — use a programmatic <a> click
+        // instead of window.open() because in-app browsers (TikTok,
+        // Instagram) block window.open as a popup.
         if (resourceUrl) {
-          window.open(resourceUrl, "_blank", "noopener,noreferrer");
+          const a = document.createElement("a");
+          a.href = resourceUrl;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          document.body.appendChild(a);
+          a.click();
+          // Clean up after a short delay
+          setTimeout(() => document.body.removeChild(a), 100);
         }
       } else {
         const r = await res.json();
