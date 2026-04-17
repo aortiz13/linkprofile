@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -28,6 +28,7 @@ import {
   Globe,
   Smartphone,
   X,
+  Filter,
 } from "lucide-react";
 import { format, subDays, subHours, startOfWeek, startOfMonth, getWeek, getMonth, getYear } from "date-fns";
 import { es } from "date-fns/locale";
@@ -198,6 +199,10 @@ export default function AnalyticsPage() {
     source: null,
     device: null,
   });
+  const [clicksLinkFilter, setClicksLinkFilter] = useState<string | null>(null);
+  const [showClicksLinkDropdown, setShowClicksLinkDropdown] = useState(false);
+  const [clicksViewMode, setClicksViewMode] = useState<ViewMode>("daily");
+  const [showClicksViewDropdown, setShowClicksViewDropdown] = useState(false);
 
   const buildParams = (opts?: { forTimeseries?: boolean }) => {
     const isHourlyTs = opts?.forTimeseries && viewMode === "hourly";
@@ -268,6 +273,32 @@ export default function AnalyticsPage() {
     queryKey: ["analytics-sources", ...queryDeps],
     queryFn: () =>
       fetch(`/api/analytics/sources${buildParams()}`).then((r) => r.json()),
+    ...queryOpts,
+  });
+
+  // ─── Clicks by Link query ─────────────────────────────────────
+  const clicksByLinkParams = useMemo(() => {
+    const isHourly = clicksViewMode === "hourly";
+    const from = isHourly
+      ? subHours(new Date(), 24).toISOString()
+      : subDays(new Date(), activeDays).toISOString();
+    const to = new Date().toISOString();
+    const params = new URLSearchParams({ from, to });
+    if (isHourly) params.append("granularity", "hourly");
+    if (activeFilters.includes("location") && filterValues.location)
+      params.append("location", filterValues.location);
+    if (activeFilters.includes("source") && filterValues.source)
+      params.append("source", filterValues.source);
+    if (activeFilters.includes("device") && filterValues.device)
+      params.append("device", filterValues.device);
+    if (clicksLinkFilter) params.append("linkId", clicksLinkFilter);
+    return `?${params.toString()}`;
+  }, [activeDays, activeFilters, filterValues, clicksViewMode, clicksLinkFilter]);
+
+  const { data: clicksByLink } = useQuery({
+    queryKey: ["analytics-clicks-by-link", clicksByLinkParams],
+    queryFn: () =>
+      fetch(`/api/analytics/clicks-by-link${clicksByLinkParams}`).then((r) => r.json()),
     ...queryOpts,
   });
 
@@ -955,7 +986,136 @@ export default function AnalyticsPage() {
         transition={{ delay: 0.1 }}
         className="analytics-section"
       >
-        <SectionHeader title="Clicks de contenido" />
+        <SectionHeader title="Clicks de contenido">
+          <div style={{ display: "flex", gap: 8 }}>
+            {/* Link Filter Dropdown */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowClicksLinkDropdown(!showClicksLinkDropdown)}
+                className="analytics-view-btn"
+              >
+                <Filter className="w-3.5 h-3.5" />
+                {clicksLinkFilter && clicksByLink?.links
+                  ? clicksByLink.links.find((l: { linkId: string }) => l.linkId === clicksLinkFilter)?.title || "Link"
+                  : "Todos los links"}
+              </button>
+              {showClicksLinkDropdown && (
+                <div className="analytics-dropdown" style={{ right: 0 }}>
+                  <button
+                    className={`analytics-dropdown-item ${!clicksLinkFilter ? "active" : ""}`}
+                    onClick={() => { setClicksLinkFilter(null); setShowClicksLinkDropdown(false); }}
+                  >
+                    Todos los links
+                    {!clicksLinkFilter && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                  {linkStats && linkStats.map((l: { linkId: string; title: string }) => (
+                    <button
+                      key={l.linkId}
+                      className={`analytics-dropdown-item ${clicksLinkFilter === l.linkId ? "active" : ""}`}
+                      onClick={() => { setClicksLinkFilter(l.linkId); setShowClicksLinkDropdown(false); }}
+                    >
+                      {l.title}
+                      {clicksLinkFilter === l.linkId && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* View Mode Dropdown */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowClicksViewDropdown(!showClicksViewDropdown)}
+                className="analytics-view-btn"
+              >
+                VIEW: {clicksViewMode.toUpperCase()}
+              </button>
+              {showClicksViewDropdown && (
+                <div className="analytics-dropdown" style={{ right: 0 }}>
+                  {VIEW_MODES.map((m) => (
+                    <button
+                      key={m.key}
+                      className={`analytics-dropdown-item ${clicksViewMode === m.key ? "active" : ""}`}
+                      onClick={() => { setClicksViewMode(m.key); setShowClicksViewDropdown(false); }}
+                    >
+                      {m.label}
+                      {clicksViewMode === m.key && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </SectionHeader>
+
+        {/* ─── Per-Link Clicks Chart ───────────────────────────── */}
+        <div className="analytics-card" style={{ marginBottom: 16 }}>
+          <div className="analytics-chart-container">
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={clicksByLink?.series || []}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(d) => {
+                    if (clicksViewMode === "hourly") {
+                      const utcDate = new Date(d.replace(" ", "T") + ":00Z");
+                      const hh = String(utcDate.getHours()).padStart(2, "0");
+                      const mm = String(utcDate.getMinutes()).padStart(2, "0");
+                      return `${hh}:${mm}`;
+                    }
+                    return format(new Date(d), "dd MMM", { locale: es });
+                  }}
+                  interval={clicksViewMode === "hourly" ? 2 : undefined}
+                />
+                <YAxis
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                />
+                <Tooltip content={<ChartTooltip />} />
+                {(clicksByLink?.links || []).map((link: { linkId: string; title: string }, idx: number) => {
+                  const colors = ["#4338CA", "#16A34A", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#14B8A6", "#F97316", "#6366F1"];
+                  return (
+                    <Line
+                      key={link.linkId}
+                      type="monotone"
+                      dataKey={link.linkId}
+                      name={link.title}
+                      stroke={colors[idx % colors.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Legend */}
+          {clicksByLink?.links && clicksByLink.links.length > 0 && (
+            <div className="analytics-chart-legend" style={{ flexWrap: "wrap" }}>
+              {clicksByLink.links.map((link: { linkId: string; title: string }, idx: number) => {
+                const colors = ["#4338CA", "#16A34A", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#14B8A6", "#F97316", "#6366F1"];
+                return (
+                  <span key={link.linkId} className="analytics-legend-item">
+                    <span className="analytics-legend-dot" style={{ background: colors[idx % colors.length] }} />
+                    {link.title}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {(!clicksByLink?.links || clicksByLink.links.length === 0) && (
+            <p className="analytics-empty">Sin datos de clicks aún</p>
+          )}
+        </div>
 
         <div className="analytics-card">
           {/* Tabs */}

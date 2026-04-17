@@ -282,6 +282,100 @@ export async function getTimeseriesHourly({ from, to, profileId, location, sourc
     }));
 }
 
+/* ─── Clicks per link timeseries ────────────────────────────────── */
+export async function getClicksByLink({
+  from,
+  to,
+  profileId,
+  location,
+  source,
+  device,
+  granularity,
+  linkId,
+}: DateRange & { granularity?: string | null; linkId?: string | null }) {
+  const isHourly = granularity === "hourly";
+
+  const dateExpr = isHourly
+    ? sql<string>`to_char(${linkClicks.timestamp} AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')`
+    : sql<string>`DATE(${linkClicks.timestamp})`;
+
+  const extraFilters = buildFilterConditions(linkClicks, { location, source, device });
+  if (linkId) {
+    extraFilters.push(eq(linkClicks.linkId, linkId));
+  }
+
+  const rows = await db
+    .select({
+      date: dateExpr.as("date"),
+      linkId: linkClicks.linkId,
+      title: linkClicks.itemTitle,
+      count: count(),
+    })
+    .from(linkClicks)
+    .where(
+      and(
+        eq(linkClicks.profileId, profileId),
+        gte(linkClicks.timestamp, from),
+        lte(linkClicks.timestamp, to),
+        ...extraFilters
+      )
+    )
+    .groupBy(dateExpr, linkClicks.linkId, linkClicks.itemTitle)
+    .orderBy(dateExpr);
+
+  // Build a map: linkId → { title, data: Map<date, count> }
+  const linksMap = new Map<string, { title: string; data: Map<string, number> }>();
+  const allDates = new Set<string>();
+
+  for (const row of rows) {
+    const lid = row.linkId || "unknown";
+    allDates.add(row.date);
+    if (!linksMap.has(lid)) {
+      linksMap.set(lid, { title: row.title || "Sin título", data: new Map() });
+    }
+    const entry = linksMap.get(lid)!;
+    entry.data.set(row.date, (entry.data.get(row.date) || 0) + row.count);
+  }
+
+  // Fill missing dates
+  if (isHourly) {
+    const current = new Date(from);
+    current.setUTCMinutes(0, 0, 0);
+    while (current <= to) {
+      const y = current.getUTCFullYear();
+      const m = String(current.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(current.getUTCDate()).padStart(2, "0");
+      const h = String(current.getUTCHours()).padStart(2, "0");
+      allDates.add(`${y}-${m}-${d} ${h}:00`);
+      current.setTime(current.getTime() + 60 * 60 * 1000);
+    }
+  } else {
+    const current = new Date(from);
+    while (current <= to) {
+      allDates.add(current.toISOString().split("T")[0]);
+      current.setDate(current.getDate() + 1);
+    }
+  }
+
+  const sortedDates = Array.from(allDates).sort();
+
+  // Build response: { links: [...], series: [{ date, [linkId]: count }] }
+  const linksMeta = Array.from(linksMap.entries()).map(([id, meta]) => ({
+    linkId: id,
+    title: meta.title,
+  }));
+
+  const series = sortedDates.map((date) => {
+    const point: Record<string, string | number> = { date };
+    for (const [lid, meta] of linksMap.entries()) {
+      point[lid] = meta.data.get(date) || 0;
+    }
+    return point;
+  });
+
+  return { links: linksMeta, series };
+}
+
 export async function getCountries({ from, to, profileId, location, source, device }: DateRange) {
   const result = await db
     .select({
