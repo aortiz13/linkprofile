@@ -206,7 +206,10 @@ export default function AnalyticsPage() {
       : subDays(new Date(), activeDays).toISOString();
     const to = new Date().toISOString();
     const params = new URLSearchParams({ from, to });
-    if (isHourlyTs) params.append("granularity", "hourly");
+    if (isHourlyTs) {
+      params.append("granularity", "hourly");
+      params.append("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+    }
     if (activeFilters.includes("location") && filterValues.location) {
       params.append("location", filterValues.location);
     }
