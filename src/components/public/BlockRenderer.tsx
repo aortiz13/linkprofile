@@ -132,6 +132,8 @@ export function BlockRenderer({ block, profile, links, aiFeatures }: BlockRender
       const resourceUrl = (config.resourceUrl as string) || "";
       const magnetId = (config.magnetId as string) || "";
       const privacyUrl = (config.privacyUrl as string) || "";
+      const coverImage = (config.coverImage as string) || "";
+      const displayMode = (config.displayMode as "block" | "popup") || "block";
       return (
         <LeadMagnetBlock
           profileId={profile.id}
@@ -141,6 +143,8 @@ export function BlockRenderer({ block, profile, links, aiFeatures }: BlockRender
           resourceUrl={resourceUrl}
           magnetId={magnetId}
           privacyUrl={privacyUrl}
+          coverImage={coverImage}
+          displayMode={displayMode}
         />
       );
     }

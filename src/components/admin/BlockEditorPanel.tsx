@@ -1436,6 +1436,9 @@ export function CaseStudiesBlockEditor({ block, onUpdate }: { block: Block; onUp
 
 // ─── Lead Magnet Block Editor ────────────────────────────────────────────────
 export function LeadMagnetBlockEditor({ block, onUpdate }: { block: Block; onUpdate: (config: Record<string, unknown>) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const config = block.config as {
     title?: string;
     description?: string;
@@ -1443,6 +1446,8 @@ export function LeadMagnetBlockEditor({ block, onUpdate }: { block: Block; onUpd
     resourceUrl?: string;
     magnetId?: string;
     privacyUrl?: string;
+    coverImage?: string;
+    displayMode?: "block" | "popup";
   };
 
   const update = (key: string, value: string) => {
@@ -1454,8 +1459,107 @@ export function LeadMagnetBlockEditor({ block, onUpdate }: { block: Block; onUpd
     onUpdate({ ...config, magnetId: `lm-${Date.now().toString(36)}` });
   }
 
+  const handleCoverUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/admin/links/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        onUpdate({ ...config, coverImage: data.imageUrl });
+      }
+    } catch (error) {
+      console.error("Failed to upload cover image", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* Display Mode Selector */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">Modo de visualización</label>
+        <p className="text-[10px] text-[var(--text-muted)]">
+          Elige si el lead magnet aparece como bloque en la página o como popup al abrirla.
+        </p>
+        <div className="flex gap-2">
+          {(["block", "popup"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => onUpdate({ ...config, displayMode: mode })}
+              className={`flex-1 px-3 py-2 rounded-[var(--radius-md)] text-xs font-medium border transition-all ${
+                (config.displayMode || "block") === mode
+                  ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                  : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-hover)]"
+              }`}
+            >
+              {mode === "block" ? "📋 Bloque" : "💬 Popup"}
+            </button>
+          ))}
+        </div>
+        {(config.displayMode === "popup") && (
+          <div className="p-2.5 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-[var(--radius-md)]">
+            <p className="text-[10px] text-[var(--accent)] font-medium">
+              ⚡ El popup aparecerá automáticamente cuando alguien visite tu página. Si lo cierran, no volverá a aparecer durante esa sesión.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Cover Image Upload */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-[var(--text-primary)]">Imagen de portada</label>
+        <p className="text-[10px] text-[var(--text-muted)]">
+          Agrega una imagen llamativa para captar la atención de tu audiencia.
+        </p>
+        {config.coverImage ? (
+          <div className="relative group rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={config.coverImage} alt="" className="w-full h-32 object-cover" />
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-medium rounded-md hover:bg-white/30 transition-colors"
+              >
+                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Cambiar"}
+              </button>
+              <button
+                onClick={() => onUpdate({ ...config, coverImage: "" })}
+                className="px-3 py-1.5 bg-red-500/60 backdrop-blur-sm text-white text-xs font-medium rounded-md hover:bg-red-500/80 transition-colors"
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full h-24 rounded-[var(--radius-md)] border-2 border-dashed border-[var(--border)] flex flex-col items-center justify-center gap-2 hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors cursor-pointer"
+          >
+            {isUploading ? (
+              <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
+            ) : (
+              <>
+                <Camera className="w-5 h-5 text-[var(--text-muted)]" />
+                <span className="text-xs text-[var(--text-muted)]">Subir imagen de portada</span>
+              </>
+            )}
+          </button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleCoverUpload(f);
+          }}
+        />
+      </div>
+
       <div className="space-y-2">
         <label className="text-xs font-medium text-[var(--text-primary)]">Título del Lead Magnet</label>
         <input
