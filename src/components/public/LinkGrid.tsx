@@ -27,7 +27,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
             <div className="flex flex-col gap-3">
               <AnimatePresence mode="popLayout">
                 {links.map((link, index) => (
-                  <LinkCard key={link.id} link={link} index={index} isBento={false} />
+                  <LinkCard key={link.id} link={link} index={index} isBento={false} profileId={profile.id} />
                 ))}
               </AnimatePresence>
             </div>
@@ -38,7 +38,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
             <div className="grid grid-cols-2 gap-3">
               <AnimatePresence mode="popLayout">
                 {links.map((link, index) => (
-                  <LinkCard key={link.id} link={link} index={index} isBento={true} />
+                  <LinkCard key={link.id} link={link} index={index} isBento={true} profileId={profile.id} />
                 ))}
               </AnimatePresence>
             </div>
@@ -48,7 +48,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
           {layout === "grid" && (
             <div className="grid grid-cols-2 gap-3">
               {links.map((link, i) => (
-                <LinkImageCard key={link.id} link={link} index={i} className="flex-col" />
+                <LinkImageCard key={link.id} link={link} index={i} className="flex-col" profileId={profile.id} />
               ))}
             </div>
           )}
@@ -57,7 +57,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
           {layout === "large_card" && (
             <div className="flex flex-col gap-4">
               {links.map((link, i) => (
-                <LinkImageCard key={link.id} link={link} index={i} className="flex-col" sizes="(max-width: 768px) 100vw, 400px" />
+                <LinkImageCard key={link.id} link={link} index={i} className="flex-col" sizes="(max-width: 768px) 100vw, 400px" profileId={profile.id} />
               ))}
             </div>
           )}
@@ -67,7 +67,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
             <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-2 -mx-4 px-4">
               {links.map((link, i) => (
                 <div key={link.id} className="min-w-[70%] max-w-[280px] shrink-0 snap-center">
-                  <LinkImageCard link={link} index={i} className="flex-col h-full" />
+                  <LinkImageCard link={link} index={i} className="flex-col h-full" profileId={profile.id} />
                 </div>
               ))}
             </div>
@@ -83,6 +83,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
                   index={i}
                   className={i % 2 === 0 ? "flex-row" : "flex-row-reverse"}
                   imgClassName="w-1/3 aspect-square"
+                  profileId={profile.id}
                 />
               ))}
             </div>
@@ -98,6 +99,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
                   index={i}
                   className="flex-row-reverse"
                   imgClassName="w-1/3 aspect-[4/3]"
+                  profileId={profile.id}
                 />
               ))}
             </div>
@@ -113,6 +115,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
                   index={i}
                   className="flex-row"
                   imgClassName="w-1/3 aspect-[4/3]"
+                  profileId={profile.id}
                 />
               ))}
             </div>
@@ -122,7 +125,7 @@ export function LinkGrid({ profile, links }: LinkGridProps) {
           {layout === "story" && (
             <div className="flex flex-col gap-4">
               {links.map((link, i) => (
-                <LinkStoryCard key={link.id} link={link} index={i} />
+                <LinkStoryCard key={link.id} link={link} index={i} profileId={profile.id} />
               ))}
             </div>
           )}
@@ -139,16 +142,17 @@ interface LinkImageCardProps {
   className?: string;
   imgClassName?: string;
   sizes?: string;
+  profileId?: string;
 }
 
-function LinkImageCard({ link, index, className = "", imgClassName = "aspect-[4/3]", sizes }: LinkImageCardProps) {
+function LinkImageCard({ link, index, className = "", imgClassName = "aspect-[4/3]", sizes, profileId }: LinkImageCardProps) {
   const handleClick = () => {
     try {
       const sessionId = typeof window !== "undefined" ? sessionStorage.getItem("lp_session_id") || "" : "";
       fetch("/api/track/click", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkId: link.id, sessionId }),
+        body: JSON.stringify({ linkId: link.id, sessionId, url: link.url, itemTitle: link.title, blockType: link.type, profileId }),
       }).catch(() => {});
     } catch {
       // ignore
@@ -191,14 +195,14 @@ function LinkImageCard({ link, index, className = "", imgClassName = "aspect-[4/
 }
 
 // ─── Link Story Card (full-bleed image with overlay text) ────────────────────
-function LinkStoryCard({ link, index }: { link: Link; index: number }) {
+function LinkStoryCard({ link, index, profileId }: { link: Link; index: number; profileId?: string }) {
   const handleClick = () => {
     try {
       const sessionId = typeof window !== "undefined" ? sessionStorage.getItem("lp_session_id") || "" : "";
       fetch("/api/track/click", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkId: link.id, sessionId }),
+        body: JSON.stringify({ linkId: link.id, sessionId, url: link.url, itemTitle: link.title, blockType: link.type, profileId }),
       }).catch(() => {});
     } catch {
       // ignore

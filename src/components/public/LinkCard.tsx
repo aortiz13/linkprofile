@@ -70,9 +70,10 @@ interface LinkCardProps {
   link: Link;
   index: number;
   isBento?: boolean;
+  profileId?: string;
 }
 
-export function LinkCard({ link, index, isBento = false }: LinkCardProps) {
+export function LinkCard({ link, index, isBento = false, profileId }: LinkCardProps) {
   const IconComponent = ICON_MAP[link.icon || "globe"] || Globe;
   const iconBg = TYPE_ICON_BG[link.type] || TYPE_ICON_BG.custom;
 
@@ -85,7 +86,14 @@ export function LinkCard({ link, index, isBento = false }: LinkCardProps) {
       fetch("/api/track/click", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkId: link.id, sessionId }),
+        body: JSON.stringify({
+          linkId: link.id,
+          sessionId,
+          url: link.url,
+          itemTitle: link.title,
+          blockType: link.type,
+          profileId,
+        }),
       }).catch(() => {}); // Silently fail
     } catch {
       // Never block navigation

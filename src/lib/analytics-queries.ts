@@ -309,9 +309,11 @@ export async function getClicksByLink({
       date: dateExpr.as("date"),
       linkId: linkClicks.linkId,
       title: linkClicks.itemTitle,
+      linkTitle: links.title,
       count: count(),
     })
     .from(linkClicks)
+    .leftJoin(links, eq(linkClicks.linkId, links.id))
     .where(
       and(
         eq(linkClicks.profileId, profileId),
@@ -320,7 +322,7 @@ export async function getClicksByLink({
         ...extraFilters
       )
     )
-    .groupBy(dateExpr, linkClicks.linkId, linkClicks.itemTitle)
+    .groupBy(dateExpr, linkClicks.linkId, linkClicks.itemTitle, links.title)
     .orderBy(dateExpr);
 
   // Build a map: linkId → { title, data: Map<date, count> }
@@ -331,7 +333,7 @@ export async function getClicksByLink({
     const lid = row.linkId || "unknown";
     allDates.add(row.date);
     if (!linksMap.has(lid)) {
-      linksMap.set(lid, { title: row.title || "Sin título", data: new Map() });
+      linksMap.set(lid, { title: row.title || row.linkTitle || "Sin título", data: new Map() });
     }
     const entry = linksMap.get(lid)!;
     entry.data.set(row.date, (entry.data.get(row.date) || 0) + row.count);
