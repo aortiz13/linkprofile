@@ -20,6 +20,30 @@ export async function GET(req: NextRequest) {
       .from(links)
       .where(and(eq(links.profileId, user.profileId), eq(links.blockId, blockId)))
       .orderBy(asc(links.order));
+
+    // Auto-migrate: if no links found for this block, assign unassigned links to it
+    if (allLinks.length === 0) {
+      const unassigned = await db
+        .select()
+        .from(links)
+        .where(and(eq(links.profileId, user.profileId), isNull(links.blockId)))
+        .orderBy(asc(links.order));
+
+      if (unassigned.length > 0) {
+        // Assign all unassigned links to this block
+        await db
+          .update(links)
+          .set({ blockId, updatedAt: new Date() })
+          .where(and(eq(links.profileId, user.profileId), isNull(links.blockId)));
+
+        // Re-fetch the now-assigned links
+        allLinks = await db
+          .select()
+          .from(links)
+          .where(and(eq(links.profileId, user.profileId), eq(links.blockId, blockId)))
+          .orderBy(asc(links.order));
+      }
+    }
   } else {
     // Fetch all links (legacy behavior)
     allLinks = await db
