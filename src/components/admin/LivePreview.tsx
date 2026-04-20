@@ -59,14 +59,27 @@ export function LivePreview() {
             
             <div className="relative z-10 w-full px-4 py-10 flex-col flex gap-3">
               {profile && pageBlocks.length > 0 ? (
-                pageBlocks.map((block) => (
-                  <BlockRenderer
-                    key={block.id}
-                    block={block}
-                    profile={profile as unknown as Profile}
-                    links={activeLinks as Link[]}
-                  />
-                ))
+                pageBlocks.map((block) => {
+                  let blockLinks = activeLinks;
+                  if (block.type === "links") {
+                    const ownLinks = activeLinks.filter((l) => l.blockId === block.id);
+                    const unassigned = activeLinks.filter((l) => !l.blockId);
+                    if (ownLinks.length > 0) {
+                      blockLinks = ownLinks;
+                    } else {
+                      const firstLinksBlock = pageBlocks.find((b) => b.type === "links");
+                      blockLinks = firstLinksBlock?.id === block.id ? unassigned : [];
+                    }
+                  }
+                  return (
+                    <BlockRenderer
+                      key={block.id}
+                      block={block}
+                      profile={profile as unknown as Profile}
+                      links={blockLinks as Link[]}
+                    />
+                  );
+                })
               ) : (
                 <p className="text-center text-sm text-[var(--text-muted)] mt-10">
                   Sin bloques

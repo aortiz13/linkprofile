@@ -2,19 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { links } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import { z } from "zod";
 
-// GET all links (active + inactive)
-export async function GET() {
+// GET all links (active + inactive), optionally filtered by blockId
+export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const allLinks = await db
-    .select()
-    .from(links)
-    .where(eq(links.profileId, user.profileId))
-    .orderBy(asc(links.order));
+  const blockId = req.nextUrl.searchParams.get("blockId");
+
+  let allLinks;
+  if (blockId) {
+    // Fetch links belonging to this specific block
+    allLinks = await db
+      .select()
+      .from(links)
+      .where(and(eq(links.profileId, user.profileId), eq(links.blockId, blockId)))
+      .orderBy(asc(links.order));
+  } else {
+    // Fetch all links (legacy behavior)
+    allLinks = await db
+      .select()
+      .from(links)
+      .where(eq(links.profileId, user.profileId))
+      .orderBy(asc(links.order));
+  }
 
   return NextResponse.json({ links: allLinks });
 }
@@ -27,6 +40,7 @@ const createSchema = z.object({
   icon: z.string().optional(),
   imageUrl: z.string().optional(),
   active: z.boolean().default(true),
+  blockId: z.string().uuid().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -55,8 +69,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Get next order
-  const maxOrder = existingLinks.reduce((max, l) => Math.max(max, l.order), -1);
+  // Get next order (within the block if blockId specified)
+  const orderLinks = parsed.data.blockId
+    ? existingLinks.filter((l) => l.blockId === parsed.data.blockId)
+    : existingLinks;
+  const maxOrder = orderLinks.reduce((max, l) => Math.max(max, l.order), -1);
 
   const [newLink] = await db
     .insert(links)

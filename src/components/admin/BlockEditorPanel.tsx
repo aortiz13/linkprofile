@@ -168,7 +168,13 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
   const layout = config.layout || "list";
 
   const { data: linksData } = useQuery({
-    queryKey: ["admin-links"],
+    queryKey: ["admin-links", block.id],
+    queryFn: () => fetch(`/api/admin/links?blockId=${block.id}`).then((r) => r.json()),
+  });
+
+  // Also fetch unassigned links for migration prompt
+  const { data: unassignedData } = useQuery({
+    queryKey: ["admin-links-unassigned"],
     queryFn: () => fetch("/api/admin/links").then((r) => r.json()),
   });
 
@@ -180,10 +186,11 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
       fetch("/api/admin/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, type: "custom", icon: "globe", active: true }),
+        body: JSON.stringify({ ...data, type: "custom", icon: "globe", active: true, blockId: block.id }),
       }).then((r) => r.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-links"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-links", block.id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-links-unassigned"] });
       setNewTitle("");
       setNewUrl("");
     },
@@ -191,7 +198,10 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/admin/links/${id}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-links", block.id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-links-unassigned"] });
+    },
   });
 
   const toggleMutation = useMutation({
@@ -201,7 +211,7 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !link.active }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links", block.id] }),
   });
 
   const updateLinkMutation = useMutation({
@@ -211,10 +221,30 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-links", block.id] }),
+  });
+
+  // Migrate unassigned links to this block
+  const migrateUnassignedMutation = useMutation({
+    mutationFn: async (linkIds: string[]) => {
+      await Promise.all(
+        linkIds.map((id) =>
+          fetch(`/api/admin/links/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ blockId: block.id }),
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-links", block.id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-links-unassigned"] });
+    },
   });
 
   const links: LinkType[] = linksData?.links || [];
+  const unassignedLinks: LinkType[] = (unassignedData?.links || []).filter((l: LinkType) => !l.blockId);
 
   const LAYOUTS = [
     { id: "list", label: "Lista" },
@@ -249,6 +279,22 @@ export function LinksBlockEditor({ block, onUpdate }: { block: Block; onUpdate: 
           ))}
         </div>
       </div>
+
+      {/* Unassigned links migration banner */}
+      {unassignedLinks.length > 0 && links.length === 0 && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-lg)] space-y-2">
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            Hay {unassignedLinks.length} link(s) sin asignar. ¿Agregarlos a este bloque?
+          </p>
+          <button
+            onClick={() => migrateUnassignedMutation.mutate(unassignedLinks.map((l) => l.id))}
+            disabled={migrateUnassignedMutation.isPending}
+            className="px-3 py-1.5 text-xs font-medium rounded-[var(--radius-md)] bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+          >
+            {migrateUnassignedMutation.isPending ? "Migrando..." : `Agregar ${unassignedLinks.length} links a este bloque`}
+          </button>
+        </div>
+      )}
 
       {/* Existing links */}
       <div className="space-y-2 max-h-[400px] overflow-y-auto">

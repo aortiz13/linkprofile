@@ -12,6 +12,7 @@ const updateSchema = z.object({
   icon: z.string().optional(),
   imageUrl: z.string().nullable().optional(),
   active: z.boolean().optional(),
+  blockId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 

@@ -66,15 +66,30 @@ export default async function PublicPage() {
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-10">
         {hasBlocks ? (
           <div className="flex flex-col gap-4">
-            {pageBlocks.map((block) => (
-              <BlockRenderer
-                key={block.id}
-                block={block}
-                profile={profile}
-                links={activeLinks}
-                aiFeatures={(profile.aiFeatures as Record<string, unknown>) || {}}
-              />
-            ))}
+            {pageBlocks.map((block) => {
+              // Filter links per block: each "links" block shows only its own links
+              let blockLinks = activeLinks;
+              if (block.type === "links") {
+                const ownLinks = activeLinks.filter((l) => l.blockId === block.id);
+                const unassigned = activeLinks.filter((l) => !l.blockId);
+                // If this block has its own links, use them. Otherwise, check if it's the first links block — assign unassigned links to it.
+                if (ownLinks.length > 0) {
+                  blockLinks = ownLinks;
+                } else {
+                  const firstLinksBlock = pageBlocks.find((b) => b.type === "links");
+                  blockLinks = firstLinksBlock?.id === block.id ? unassigned : [];
+                }
+              }
+              return (
+                <BlockRenderer
+                  key={block.id}
+                  block={block}
+                  profile={profile}
+                  links={blockLinks}
+                  aiFeatures={(profile.aiFeatures as Record<string, unknown>) || {}}
+                />
+              );
+            })}
           </div>
         ) : (
           <>
