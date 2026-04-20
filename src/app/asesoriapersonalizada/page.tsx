@@ -523,9 +523,6 @@ export default function AsesoriaPersonalizada() {
             margin-right: auto;
             gap: 24px;
           }
-          .asesoria-page .ap-plan-featured {
-            order: -1;
-          }
         }
         .asesoria-page .ap-plan {
           padding: 32px 28px;
