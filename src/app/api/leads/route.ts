@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     const { profileId: directProfileId, username, name, email, phone, message, source } = parsed.data;
 
-    // Resolve profileId: either directly provided or looked up by username
+    // Resolve profileId: directly provided, by username, or fallback to first profile
     let profileId = directProfileId;
     if (!profileId && username) {
       const [profile] = await db
@@ -33,14 +33,19 @@ export async function POST(req: Request) {
         .from(profiles)
         .where(eq(profiles.username, username))
         .limit(1);
-      if (!profile) {
-        return NextResponse.json({ error: "Perfil no encontrado" }, { status: 404 });
-      }
-      profileId = profile.id;
+      if (profile) profileId = profile.id;
     }
 
+    // Fallback: use the first profile (matches main page behavior)
     if (!profileId) {
-      return NextResponse.json({ error: "Se requiere profileId o username" }, { status: 400 });
+      const [firstProfile] = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .limit(1);
+      if (!firstProfile) {
+        return NextResponse.json({ error: "No hay perfiles configurados" }, { status: 404 });
+      }
+      profileId = firstProfile.id;
     }
 
     // Verify phone or email is provided
