@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { leads } from "@/lib/db/schema";
+import { leads, profiles } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 const leadSchema = z.object({
-  profileId: z.string().uuid(),
+  profileId: z.string().uuid().optional(),
+  username: z.string().min(1).optional(),
   name: z.string().min(1),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1).optional().or(z.literal("")),
@@ -21,7 +23,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
-    const { profileId, name, email, phone, message, source } = parsed.data;
+    const { profileId: directProfileId, username, name, email, phone, message, source } = parsed.data;
+
+    // Resolve profileId: either directly provided or looked up by username
+    let profileId = directProfileId;
+    if (!profileId && username) {
+      const [profile] = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.username, username))
+        .limit(1);
+      if (!profile) {
+        return NextResponse.json({ error: "Perfil no encontrado" }, { status: 404 });
+      }
+      profileId = profile.id;
+    }
+
+    if (!profileId) {
+      return NextResponse.json({ error: "Se requiere profileId o username" }, { status: 400 });
+    }
 
     // Verify phone or email is provided
     if (!email && !phone) {

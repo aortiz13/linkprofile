@@ -373,6 +373,8 @@
   @media (max-width:768px){
     .hero-meta-row{ grid-template-columns:1fr; }
     .hero-meta-row > div{ padding:20px 0; }
+    .hero-topline{ display:none; }
+    .hero-brand-row{ display:none; }
   }
 
   /* ══════════ PROBLEM ══════════ */
@@ -671,6 +673,7 @@
     gap:80px; align-items:start;
   }
   @media (max-width:900px){ .contact-grid{ grid-template-columns:1fr; gap:56px; } }
+  @media (max-width:768px){ .contact-info{ display:none; } }
 
   .contact-head .eyebrow{ color:var(--cyan-400); }
   .contact-head .eyebrow::before{ background:var(--cyan-400); }
@@ -934,7 +937,7 @@
       <div class="hero-meta">ENTERPRISE AI · 1:1 TRAINING</div>
     </div>
 
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">
+    <div class="hero-brand-row" style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">
       <div class="nav-mark" aria-hidden="true" style="width:32px;height:32px;"></div>
       <div style="font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gray-900);">ADRIAN ORTIZ <span style="color:var(--gray-400);font-weight:400;">· BRANDBOOST AI</span></div>
     </div>
@@ -1754,7 +1757,7 @@
   // Form
   const form = document.getElementById('leadForm');
   const success = document.getElementById('formSuccess');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     // Validate hidden custom selects
     const modalidad = document.getElementById('modalidad');
@@ -1774,9 +1777,56 @@
       else form.reportValidity();
       return;
     }
-    form.style.display = 'none';
-    success.classList.add('active');
-    // Here you would POST the data to your endpoint.
+
+    // Build phone with dial code
+    const paisCddBtn = document.querySelector('[data-cdd="pais"] .cdd-btn');
+    const dialSpan = paisCddBtn ? paisCddBtn.querySelector('.dial') : null;
+    const dialCode = dialSpan ? dialSpan.textContent.trim() : '+54';
+    const rawPhone = document.getElementById('whatsapp').value.trim();
+    const fullPhone = rawPhone ? dialCode + rawPhone.replace(/\s+/g, '') : '';
+
+    // Collect data
+    const payload = {
+      username: 'adrian',
+      name: document.getElementById('nombre').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: fullPhone,
+      message: [
+        'Modalidad: ' + (modalidad.value || '-'),
+        'Nivel IA: ' + (nivel.value || '-'),
+        'Rol: ' + (document.getElementById('rol').value.trim() || '-'),
+        'Objetivo: ' + (document.getElementById('objetivo').value.trim() || '-'),
+        'País: ' + (document.getElementById('pais').value || '-')
+      ].join('\n'),
+      source: 'asesoria-ia',
+    };
+
+    // Disable submit button
+    const submitBtn = form.querySelector('.form-submit');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Enviando...';
+
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        form.style.display = 'none';
+        success.classList.add('active');
+      } else {
+        alert('Error al enviar: ' + (data.error || 'Intenta de nuevo.'));
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    } catch (err) {
+      alert('Error de conexión. Intenta de nuevo.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
   });
 </script>
 
