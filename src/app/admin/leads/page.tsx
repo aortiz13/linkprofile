@@ -11,6 +11,7 @@ interface Lead {
   name: string;
   email: string | null;
   phone: string | null;
+  occupation: string | null;
   message: string | null;
   source: string | null;
   country: string | null;
@@ -132,6 +133,11 @@ export default function LeadsPage() {
                           <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline" onClick={(e) => e.stopPropagation()}>
                             {lead.phone}
                           </a>
+                        </div>
+                      )}
+                      {lead.occupation && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-purple-500/10 text-purple-500">💼 {lead.occupation}</span>
                         </div>
                       )}
                     </td>

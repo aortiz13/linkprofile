@@ -36,15 +36,49 @@ export const profiles = pgTable("profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// ─── Lead Magnets ────────────────────────────────────────────────────────────
+export const leadMagnets = pgTable(
+  "lead_magnets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    description: text("description"),
+    buttonText: text("button_text").notNull().default("Obtener recurso gratis"),
+    resourceUrl: text("resource_url").notNull(), // Google Drive or other link
+    coverImage: text("cover_image"),
+    // Form field toggles
+    showName: boolean("show_name").notNull().default(true),
+    showEmail: boolean("show_email").notNull().default(true),
+    showWhatsapp: boolean("show_whatsapp").notNull().default(true),
+    showOccupation: boolean("show_occupation").notNull().default(true),
+    // Occupation dropdown options (JSON array of strings)
+    occupationOptions: jsonb("occupation_options").notNull().default(["Emprendedor", "Empresario", "Freelancer", "Empleado", "Estudiante", "Otro"]),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("lead_magnets_slug_idx").on(t.slug),
+    index("lead_magnets_profile_idx").on(t.profileId),
+  ]
+);
+
 // ─── Leads ───────────────────────────────────────────────────────────────────
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   profileId: uuid("profile_id")
     .notNull()
     .references(() => profiles.id, { onDelete: "cascade" }),
+  leadMagnetId: uuid("lead_magnet_id")
+    .references(() => leadMagnets.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
+  occupation: text("occupation"),
   message: text("message"),
   source: text("source"),
   country: text("country"),
@@ -178,3 +212,5 @@ export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
 export type Block = typeof blocks.$inferSelect;
 export type NewBlock = typeof blocks.$inferInsert;
+export type LeadMagnet = typeof leadMagnets.$inferSelect;
+export type NewLeadMagnet = typeof leadMagnets.$inferInsert;

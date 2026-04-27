@@ -9,12 +9,14 @@ import {
   Sparkles,
   Zap,
   Users,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Analítica", icon: BarChart3 },
   { href: "/admin/leads", label: "Leads", icon: Users },
+  { href: "/admin/lead-magnets", label: "Lead Magnets", icon: Gift },
   { href: "/admin/profile", label: "Page Builder", icon: LayoutTemplate },
   { href: "/admin/features", label: "Features", icon: Zap },
 ];

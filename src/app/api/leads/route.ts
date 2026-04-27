@@ -10,6 +10,7 @@ const leadSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().min(1).optional().or(z.literal("")),
+  occupation: z.string().optional().or(z.literal("")),
   message: z.string().optional().or(z.literal("")),
   source: z.string().optional().or(z.literal("")),
 });
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
-    const { profileId: directProfileId, username, name, email, phone, message, source } = parsed.data;
+    const { profileId: directProfileId, username, name, email, phone, occupation, message, source } = parsed.data;
 
     // Resolve profileId: directly provided, by username, or fallback to first profile
     let profileId = directProfileId;
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
         name,
         email: email || null,
         phone: phone || null,
+        occupation: occupation || null,
         message: message || null,
         source: source || null,
         country,
