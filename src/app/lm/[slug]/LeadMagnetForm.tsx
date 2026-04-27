@@ -153,7 +153,7 @@ export function LeadMagnetForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="rounded-[20px] overflow-hidden"
+      className="rounded-[20px] overflow-visible"
     >
       {/* Cover image */}
       {coverImage && (
@@ -210,7 +210,7 @@ export function LeadMagnetForm({
 
       {/* Card body */}
       <div
-        className="glass p-6"
+        className="glass p-6 overflow-visible"
         style={{
           borderRadius: coverImage
             ? "0 0 20px 20px"
