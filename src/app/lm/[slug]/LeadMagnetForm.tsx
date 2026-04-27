@@ -52,6 +52,7 @@ export function LeadMagnetForm({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("");
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -379,6 +380,43 @@ export function LeadMagnetForm({
               </motion.p>
             )}
           </AnimatePresence>
+
+          {/* Privacy checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer group mt-1">
+            <div className="relative mt-0.5">
+              <input
+                type="checkbox"
+                checked={acceptPrivacy}
+                onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                required
+                className="sr-only peer"
+              />
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                acceptPrivacy
+                  ? "bg-[var(--accent)] border-[var(--accent)]"
+                  : "border-[var(--border)] group-hover:border-[var(--accent)]/50"
+              }`}>
+                {acceptPrivacy && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <span className="text-xs text-[var(--text-muted)] leading-relaxed">
+              Acepto la{" "}
+              <a
+                href="/privacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent)] underline hover:no-underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                política de privacidad
+              </a>{" "}
+              y autorizo el uso de mis datos para recibir el recurso.
+            </span>
+          </label>
 
           {/* CTA Button */}
           <motion.button
