@@ -127,14 +127,23 @@ export default function LeadsPage() {
                           <a href={`mailto:${lead.email}`} className="text-blue-500 hover:underline" onClick={(e) => e.stopPropagation()}>{lead.email}</a>
                         </div>
                       )}
-                      {lead.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                          <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {lead.phone}
-                          </a>
-                        </div>
-                      )}
+                      {lead.phone && (() => {
+                        const cleanPhone = lead.phone.replace(/[^0-9]/g, "");
+                        const leadMagnetName = lead.source?.startsWith("lead_magnet:") ? lead.source.replace("lead_magnet:", "") : null;
+                        const firstName = lead.name?.split(" ")[0] || "";
+                        const waMessage = leadMagnetName
+                          ? `¡Hola${firstName ? ` ${firstName}` : ""}! 👋 Vi que descargaste el recurso "${leadMagnetName}". ¿Qué te pareció? ¿Tienes alguna duda?`
+                          : `¡Hola${firstName ? ` ${firstName}` : ""}! 👋 ¿Cómo estás?`;
+                        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                            <a href={waUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {lead.phone}
+                            </a>
+                          </div>
+                        );
+                      })()}
                       {lead.occupation && (
                         <div className="flex items-center gap-2 mt-1">
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-purple-500/10 text-purple-500">💼 {lead.occupation}</span>
