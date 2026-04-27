@@ -17,6 +17,29 @@ import {
   Briefcase,
 } from "lucide-react";
 
+const COUNTRY_CODES = [
+  { code: "+54", flag: "🇦🇷", name: "Argentina" },
+  { code: "+52", flag: "🇲🇽", name: "México" },
+  { code: "+56", flag: "🇨🇱", name: "Chile" },
+  { code: "+57", flag: "🇨🇴", name: "Colombia" },
+  { code: "+51", flag: "🇵🇪", name: "Perú" },
+  { code: "+593", flag: "🇪🇨", name: "Ecuador" },
+  { code: "+598", flag: "🇺🇾", name: "Uruguay" },
+  { code: "+595", flag: "🇵🇾", name: "Paraguay" },
+  { code: "+591", flag: "🇧🇴", name: "Bolivia" },
+  { code: "+58", flag: "🇻🇪", name: "Venezuela" },
+  { code: "+506", flag: "🇨🇷", name: "Costa Rica" },
+  { code: "+507", flag: "🇵🇦", name: "Panamá" },
+  { code: "+503", flag: "🇸🇻", name: "El Salvador" },
+  { code: "+502", flag: "🇬🇹", name: "Guatemala" },
+  { code: "+504", flag: "🇭🇳", name: "Honduras" },
+  { code: "+505", flag: "🇳🇮", name: "Nicaragua" },
+  { code: "+1", flag: "🇺🇸", name: "Estados Unidos" },
+  { code: "+34", flag: "🇪🇸", name: "España" },
+  { code: "+55", flag: "🇧🇷", name: "Brasil" },
+  { code: "+44", flag: "🇬🇧", name: "Reino Unido" },
+];
+
 interface LeadMagnetFormProps {
   slug: string;
   title: string;
@@ -47,21 +70,23 @@ export function LeadMagnetForm({
   const [resourceUrl, setResourceUrl] = useState("");
   const [error, setError] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [phoneCountryOpen, setPhoneCountryOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0]);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [occupation, setOccupation] = useState("");
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setDropdownOpen(false);
-    if (dropdownOpen) {
+    const handleClickOutside = () => { setDropdownOpen(false); setPhoneCountryOpen(false); };
+    if (dropdownOpen || phoneCountryOpen) {
       document.addEventListener("click", handleClickOutside);
       return () => document.removeEventListener("click", handleClickOutside);
     }
-  }, [dropdownOpen]);
+  }, [dropdownOpen, phoneCountryOpen]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -73,7 +98,7 @@ export function LeadMagnetForm({
         const res = await fetch("/api/lead-magnet/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug, name, email, phone, occupation }),
+          body: JSON.stringify({ slug, name, email, phone: `${countryCode.code}${phoneNumber}`, occupation }),
         });
 
         const data = await res.json();
@@ -100,7 +125,7 @@ export function LeadMagnetForm({
         setLoading(false);
       }
     },
-    [slug, name, email, phone, occupation]
+    [slug, name, email, countryCode, phoneNumber, occupation]
   );
 
   /* ── Success state ───────────────────────────────────────────────────── */
@@ -283,16 +308,65 @@ export function LeadMagnetForm({
 
           {/* WhatsApp */}
           {showWhatsapp && (
-            <div className="relative">
-              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="WhatsApp (con código de país)"
-                required
-                className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
-              />
+            <div className="flex gap-2">
+              {/* Country code selector */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setPhoneCountryOpen(!phoneCountryOpen); }}
+                  className={`flex items-center gap-1.5 bg-[var(--bg-surface)] border rounded-xl px-3 py-3.5 text-sm transition-all min-w-[100px] ${
+                    phoneCountryOpen
+                      ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/20"
+                      : "border-[var(--border)] hover:border-[var(--border-hover)]"
+                  }`}
+                >
+                  <span className="text-base leading-none">{countryCode.flag}</span>
+                  <span className="text-[var(--text-primary)] font-medium">{countryCode.code}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform ${phoneCountryOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                <AnimatePresence>
+                  {phoneCountryOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute z-50 w-56 mt-1.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setCountryCode(c); setPhoneCountryOpen(false); }}
+                          className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors ${
+                            countryCode.code === c.code
+                              ? "bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
+                              : "text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                          }`}
+                        >
+                          <span className="text-base leading-none">{c.flag}</span>
+                          <span className="flex-1">{c.name}</span>
+                          <span className="text-[var(--text-muted)] text-xs">{c.code}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Phone number */}
+              <div className="relative flex-1">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9\s]/g, ""))}
+                  placeholder="11 1234 5678"
+                  required
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
+                />
+              </div>
             </div>
           )}
 
