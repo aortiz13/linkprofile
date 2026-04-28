@@ -2,13 +2,17 @@
  * Evolution API Webhook Receiver
  * ─────────────────────────────
  * Receives MESSAGES_UPSERT events from Evolution API,
- * extracts the incoming message, and enqueues it for debounced processing.
+ * extracts the incoming message (text or audio), and enqueues it
+ * for debounced processing.
  *
+ * Audio messages are transcribed via OpenAI Whisper before processing.
  * Messages from the same phone within 8 seconds are batched into one.
  */
 
 import { NextResponse } from "next/server";
 import { enqueueMessage } from "@/lib/message-queue";
+import { getMediaBase64 } from "@/lib/evolution-api";
+import { transcribeAudio } from "@/lib/audio-transcribe";
 
 export async function POST(req: Request) {
   try {
@@ -44,7 +48,6 @@ export async function POST(req: Request) {
     }
 
     // Extract phone number — handle LID (Linked ID) format
-    // When remoteJid ends with @lid, the real phone is in remoteJidAlt
     let phoneJid = remoteJid;
     if (remoteJid.endsWith("@lid") && data.key.remoteJidAlt) {
       phoneJid = data.key.remoteJidAlt;
@@ -59,8 +62,51 @@ export async function POST(req: Request) {
       );
     }
 
-    // Extract message text
+    // Extract sender name if available
+    const senderName: string | undefined = data.pushName || undefined;
+
+    // ─── Extract message content (text or audio) ─────────────────────────
     let messageText = "";
+    const isAudio = !!data.message?.audioMessage;
+
+    if (isAudio) {
+      // Audio message → download and transcribe
+      console.log(`[Webhook] Audio message from ${phone}, downloading...`);
+
+      // Fire-and-forget audio processing (respond to webhook immediately)
+      const audioPromise = (async () => {
+        try {
+          const media = await getMediaBase64({
+            key: data.key,
+            message: data.message,
+          });
+
+          if (!media) {
+            console.error("[Webhook] Failed to download audio");
+            enqueueMessage(phone, "[El usuario envió un audio que no se pudo procesar]", senderName);
+            return;
+          }
+
+          const transcription = await transcribeAudio(media.base64, media.mimetype);
+
+          if (!transcription) {
+            enqueueMessage(phone, "[El usuario envió un audio que no se pudo transcribir]", senderName);
+            return;
+          }
+
+          // Enqueue the transcribed text with a marker that it was audio
+          enqueueMessage(phone, `[Audio transcrito]: ${transcription}`, senderName);
+        } catch (err) {
+          console.error("[Webhook] Audio processing error:", err);
+          enqueueMessage(phone, "[El usuario envió un audio que no se pudo procesar]", senderName);
+        }
+      })();
+
+      void audioPromise;
+      return NextResponse.json({ status: "processing_audio" });
+    }
+
+    // Text messages
     if (data.message?.conversation) {
       messageText = data.message.conversation;
     } else if (data.message?.extendedTextMessage?.text) {
@@ -73,20 +119,16 @@ export async function POST(req: Request) {
       messageText = data.message.documentMessage.caption;
     }
 
-    // If no text content, skip (audio, stickers, etc.)
+    // If no text content, skip (stickers, reactions, etc.)
     if (!messageText.trim()) {
-      console.log("[Webhook] Non-text message received, skipping.");
+      console.log("[Webhook] Non-text/non-audio message received, skipping.");
       return NextResponse.json({
         status: "ignored",
         reason: "non_text_message",
       });
     }
 
-    // Extract sender name if available
-    const senderName: string | undefined = data.pushName || undefined;
-
     // Enqueue message for debounced processing
-    // Messages from the same phone within 8s are batched into one
     enqueueMessage(phone, messageText, senderName);
 
     return NextResponse.json({ status: "queued" });

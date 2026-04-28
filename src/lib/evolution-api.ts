@@ -88,3 +88,47 @@ export async function sendWhatsAppMessage(
     return { success: false, error: msg };
   }
 }
+
+/**
+ * Download media from a WhatsApp message as base64.
+ * Uses Evolution API's getBase64FromMediaMessage endpoint.
+ * @param messageData - The full message data object from the webhook
+ */
+export async function getMediaBase64(messageData: {
+  key: { remoteJid: string; id: string; fromMe: boolean };
+  message: Record<string, unknown>;
+}): Promise<{ base64: string; mimetype: string } | null> {
+  try {
+    const url = `${EVOLUTION_API_URL}/chat/getBase64FromMediaMessage/${EVOLUTION_INSTANCE}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: EVOLUTION_API_KEY,
+      },
+      body: JSON.stringify({
+        message: {
+          key: messageData.key,
+          message: messageData.message,
+        },
+        convertToMp4: false,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`[Evolution] getBase64 error (${response.status}):`, errorBody);
+      return null;
+    }
+
+    const result = await response.json();
+    return {
+      base64: result.base64 || result.data,
+      mimetype: result.mimetype || "audio/ogg",
+    };
+  } catch (error) {
+    console.error("[Evolution] getBase64 fetch error:", error);
+    return null;
+  }
+}
