@@ -206,6 +206,66 @@ export const blocks = pgTable(
   ]
 );
 
+// ─── WhatsApp Agent – Conversations ──────────────────────────────────────────
+export const waConversations = pgTable(
+  "wa_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+    phone: text("phone").notNull(),
+    stage: text("stage").notNull().default("greeting"),
+    // greeting | discovery | qualification | value_delivery | link_offer | followup | closing | escalation | inactive
+    qualificationScore: integer("qualification_score").notNull().default(0),
+    qualificationData: jsonb("qualification_data").default({}),
+    leadContext: jsonb("lead_context").default({}), // name, email, occupation, resource downloaded
+    linkSent: boolean("link_sent").notNull().default(false),
+    linkClickedAt: timestamp("link_clicked_at"),
+    escalated: boolean("escalated").notNull().default(false),
+    escalatedAt: timestamp("escalated_at"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("wa_conv_phone_idx").on(t.phone),
+    index("wa_conv_lead_idx").on(t.leadId),
+  ]
+);
+
+// ─── WhatsApp Agent – Messages (memory) ──────────────────────────────────────
+export const waMessages = pgTable(
+  "wa_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => waConversations.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // 'user' | 'assistant'
+    content: text("content").notNull(),
+    metadata: jsonb("metadata"), // raw Evolution API data, token counts, etc.
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("wa_msg_conv_idx").on(t.conversationId, t.createdAt)]
+);
+
+// ─── WhatsApp Agent – Link Tracking Tokens ───────────────────────────────────
+export const waLinkTokens = pgTable(
+  "wa_link_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => waConversations.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    targetUrl: text("target_url").notNull(),
+    clicked: boolean("clicked").notNull().default(false),
+    clickedAt: timestamp("clicked_at"),
+    followupSent: boolean("followup_sent").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("wa_link_token_idx").on(t.token)]
+);
+
 // ─── Type exports ────────────────────────────────────────────────────────────
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
@@ -222,3 +282,7 @@ export type Block = typeof blocks.$inferSelect;
 export type NewBlock = typeof blocks.$inferInsert;
 export type LeadMagnet = typeof leadMagnets.$inferSelect;
 export type NewLeadMagnet = typeof leadMagnets.$inferInsert;
+export type WaConversation = typeof waConversations.$inferSelect;
+export type WaMessage = typeof waMessages.$inferSelect;
+export type WaLinkToken = typeof waLinkTokens.$inferSelect;
+

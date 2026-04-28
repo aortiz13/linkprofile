@@ -5,6 +5,7 @@ import { isBot } from "@/lib/bot-filter";
 import { getGeo } from "@/lib/geo";
 import { UAParser } from "ua-parser-js";
 import { createHash } from "crypto";
+import { handleLinkClick } from "@/lib/whatsapp-agent";
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,5 +100,29 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("POST /api/track/click error:", error);
     return new NextResponse(null, { status: 204 });
+  }
+}
+
+// ─── GET: WhatsApp Agent Link Tracking ───────────────────────────────────────
+// Receives ?t=TOKEN, logs the click, starts follow-up timer, redirects to target
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get("t");
+
+  if (!token) {
+    return NextResponse.json({ error: "Token requerido" }, { status: 400 });
+  }
+
+  try {
+    const targetUrl = await handleLinkClick(token);
+
+    if (!targetUrl) {
+      // Invalid token — redirect to asesorias anyway
+      return NextResponse.redirect("https://adrian-ortiz.com/asesorias");
+    }
+
+    return NextResponse.redirect(targetUrl);
+  } catch (error) {
+    console.error("GET /api/track/click error:", error);
+    return NextResponse.redirect("https://adrian-ortiz.com/asesorias");
   }
 }
