@@ -2,24 +2,25 @@
  * Evolution API Webhook Receiver
  * ─────────────────────────────
  * Receives MESSAGES_UPSERT events from Evolution API,
- * extracts the incoming message, and processes it through the AI agent.
+ * extracts the incoming message, and enqueues it for debounced processing.
+ *
+ * Messages from the same phone within 8 seconds are batched into one.
  */
 
 import { NextResponse } from "next/server";
-import { processIncomingMessage } from "@/lib/whatsapp-agent";
+import { enqueueMessage } from "@/lib/message-queue";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Log incoming webhook for debugging
+    // Log incoming webhook
     console.log(
       "[Webhook] Received event:",
       body.event,
       "| Instance:",
       body.instance
     );
-    console.log("[Webhook] Full payload:", JSON.stringify(body, null, 2));
 
     // Only process messages.upsert events
     if (body.event !== "messages.upsert") {
@@ -84,18 +85,11 @@ export async function POST(req: Request) {
     // Extract sender name if available
     const senderName: string | undefined = data.pushName || undefined;
 
-    // Process the message through the AI agent (fire-and-forget to respond fast)
-    // We respond to the webhook immediately and process async
-    const processPromise = processIncomingMessage(phone, messageText, senderName)
-      .catch((err) => {
-        console.error("[Webhook] Agent processing error:", err);
-      });
+    // Enqueue message for debounced processing
+    // Messages from the same phone within 8s are batched into one
+    enqueueMessage(phone, messageText, senderName);
 
-    // Don't await — respond to webhook immediately to avoid timeout
-    // Node.js will keep the promise alive
-    void processPromise;
-
-    return NextResponse.json({ status: "processing" });
+    return NextResponse.json({ status: "queued" });
   } catch (error) {
     console.error("[Webhook] Error processing webhook:", error);
     return NextResponse.json(
