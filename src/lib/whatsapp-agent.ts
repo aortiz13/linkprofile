@@ -170,7 +170,7 @@ export async function processIncomingMessage(
     contextPrefix = `[CONTEXTO INTERNO - NO mostrar al usuario: La persona se llama "${ctx.name || senderName || "desconocido"}", su ocupación es "${ctx.occupation || "no especificada"}", descargó el recurso "${ctx.resourceTitle || "recurso"}". Su email es ${ctx.email || "no disponible"}. Este es su PRIMER mensaje respondiendo a tu mensaje automatizado inicial.]\n\n`;
   }
 
-  // 6. Call Gemini
+  // 6. Call Gemini (with retry for rate limits)
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
@@ -182,8 +182,25 @@ export async function processIncomingMessage(
   });
 
   const chat = model.startChat({ history: geminiHistory });
-  const result = await chat.sendMessage(contextPrefix + messageText);
-  const responseText = result.response.text();
+
+  let responseText = "";
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await chat.sendMessage(contextPrefix + messageText);
+      responseText = result.response.text();
+      break; // success
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
+      if (status === 429 && attempt < MAX_RETRIES) {
+        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        console.warn(`[WA Agent] Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${attempt}/${MAX_RETRIES})`);
+        await new Promise((r) => setTimeout(r, delay));
+      } else {
+        throw err; // non-retryable or exhausted retries
+      }
+    }
+  }
 
   // 7. Parse the JSON response
   let agentResponse: AgentResponse;
