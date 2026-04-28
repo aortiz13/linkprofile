@@ -42,6 +42,9 @@ const createSchema = z.object({
   showWhatsapp: z.boolean().optional(),
   showOccupation: z.boolean().optional(),
   occupationOptions: z.array(z.string()).optional(),
+  whatsappEnabled: z.boolean().optional(),
+  whatsappMessage: z.string().max(2000).optional().or(z.literal("")),
+  whatsappDelay: z.number().int().min(0).max(900).optional(),
 });
 
 export async function POST(req: Request) {
@@ -74,6 +77,9 @@ export async function POST(req: Request) {
       showWhatsapp,
       showOccupation,
       occupationOptions,
+      whatsappEnabled,
+      whatsappMessage,
+      whatsappDelay,
     } = parsed.data;
 
     // Check slug uniqueness
@@ -112,6 +118,9 @@ export async function POST(req: Request) {
           "Estudiante",
           "Otro",
         ],
+        whatsappEnabled: whatsappEnabled ?? false,
+        whatsappMessage: whatsappMessage || null,
+        whatsappDelay: whatsappDelay ?? 0,
       })
       .returning();
 

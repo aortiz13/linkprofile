@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { leads, profiles } from "@/lib/db/schema";

@@ -57,6 +57,10 @@ export const leadMagnets = pgTable(
     showOccupation: boolean("show_occupation").notNull().default(true),
     // Occupation dropdown options (JSON array of strings)
     occupationOptions: jsonb("occupation_options").notNull().default(["Emprendedor", "Empresario", "Freelancer", "Empleado", "Estudiante", "Otro"]),
+    // WhatsApp auto-message config
+    whatsappEnabled: boolean("whatsapp_enabled").notNull().default(false),
+    whatsappMessage: text("whatsapp_message"),
+    whatsappDelay: integer("whatsapp_delay").notNull().default(0), // delay in seconds: 0=immediate, 300=5min, 600=10min, 900=15min
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -82,6 +86,10 @@ export const leads = pgTable("leads", {
   message: text("message"),
   source: text("source"),
   country: text("country"),
+  // WhatsApp auto-message tracking
+  whatsappStatus: text("whatsapp_status"), // null | 'pending' | 'sent' | 'error'
+  whatsappError: text("whatsapp_error"),
+  whatsappSentAt: timestamp("whatsapp_sent_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

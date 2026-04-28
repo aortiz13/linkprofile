@@ -3,6 +3,10 @@ import { db } from "@/lib/db";
 import { leads, leadMagnets } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import {
+  sendWhatsAppMessage,
+  interpolateMessage,
+} from "@/lib/evolution-api";
 
 const submitSchema = z.object({
   slug: z.string().min(1),
@@ -48,6 +52,10 @@ export async function POST(req: Request) {
       req.headers.get("x-country") ||
       null;
 
+    // Determine initial WhatsApp status
+    const shouldSendWhatsApp =
+      magnet.whatsappEnabled && magnet.whatsappMessage && phone;
+
     // Save the lead
     const [newLead] = await db
       .insert(leads)
@@ -60,8 +68,57 @@ export async function POST(req: Request) {
         occupation,
         source: `lead_magnet:${magnet.slug}`,
         country,
+        whatsappStatus: shouldSendWhatsApp ? "pending" : null,
       })
       .returning();
+
+    // Fire-and-forget WhatsApp sending (don't block the response)
+    if (shouldSendWhatsApp && newLead) {
+      const delayMs = (magnet.whatsappDelay || 0) * 1000;
+
+      const sendFn = async () => {
+        try {
+          // Interpolate the message template with lead data
+          const message = interpolateMessage(magnet.whatsappMessage!, {
+            name,
+            email,
+            phone,
+            occupation,
+            resourceTitle: magnet.title,
+          });
+
+          const result = await sendWhatsAppMessage(phone, message);
+
+          // Update lead with result
+          await db
+            .update(leads)
+            .set({
+              whatsappStatus: result.success ? "sent" : "error",
+              whatsappError: result.error || null,
+              whatsappSentAt: result.success ? new Date() : null,
+            })
+            .where(eq(leads.id, newLead.id));
+        } catch (err) {
+          console.error("Error in WhatsApp send flow:", err);
+          await db
+            .update(leads)
+            .set({
+              whatsappStatus: "error",
+              whatsappError:
+                err instanceof Error ? err.message : "Error desconocido",
+            })
+            .where(eq(leads.id, newLead.id));
+        }
+      };
+
+      if (delayMs > 0) {
+        // Schedule the send after the delay
+        setTimeout(sendFn, delayMs);
+      } else {
+        // Send immediately but don't await (fire-and-forget)
+        sendFn();
+      }
+    }
 
     return NextResponse.json({
       success: true,

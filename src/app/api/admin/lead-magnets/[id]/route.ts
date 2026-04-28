@@ -48,6 +48,9 @@ const updateSchema = z.object({
   showOccupation: z.boolean().optional(),
   occupationOptions: z.array(z.string()).optional(),
   active: z.boolean().optional(),
+  whatsappEnabled: z.boolean().optional(),
+  whatsappMessage: z.string().max(2000).optional().nullable(),
+  whatsappDelay: z.number().int().min(0).max(900).optional(),
 });
 
 export async function PATCH(req: Request, { params }: RouteParams) {

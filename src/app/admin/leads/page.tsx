@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Users, Mail, Phone, MessageSquare, Calendar, Globe, Tag } from "lucide-react";
+import { Users, Mail, Phone, MessageSquare, Calendar, Globe, Tag, MessageCircle, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useState } from "react";
 
 interface Lead {
@@ -15,6 +15,9 @@ interface Lead {
   message: string | null;
   source: string | null;
   country: string | null;
+  whatsappStatus: string | null;
+  whatsappError: string | null;
+  whatsappSentAt: string | null;
   createdAt: string;
 }
 
@@ -101,6 +104,7 @@ export default function LeadsPage() {
                   <th className="px-6 py-4">Contacto</th>
                   <th className="px-6 py-4">Fuente</th>
                   <th className="px-6 py-4">Mensaje</th>
+                  <th className="px-6 py-4">WA Auto</th>
                   <th className="px-6 py-4 rounded-tr-[var(--radius-lg)]">Fecha</th>
                 </tr>
               </thead>
@@ -177,6 +181,23 @@ export default function LeadsPage() {
                         </div>
                       ) : (
                         <span className="text-[var(--text-muted)] opacity-50 italic">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {lead.whatsappStatus === "sent" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-500/10 text-emerald-600">
+                          <CheckCircle2 className="w-3 h-3" /> Enviado
+                        </span>
+                      ) : lead.whatsappStatus === "pending" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-500/10 text-amber-600">
+                          <Clock className="w-3 h-3" /> Pendiente
+                        </span>
+                      ) : lead.whatsappStatus === "error" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-500/10 text-red-500 cursor-help" title={lead.whatsappError || "Error desconocido"}>
+                          <XCircle className="w-3 h-3" /> Error
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[var(--text-muted)] opacity-50">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
