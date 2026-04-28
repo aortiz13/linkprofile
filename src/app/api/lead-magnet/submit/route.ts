@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { leads, leadMagnets } from "@/lib/db/schema";
+import { leads, leadMagnets, waConversations, waMessages } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -98,6 +98,41 @@ export async function POST(req: Request) {
               whatsappSentAt: result.success ? new Date() : null,
             })
             .where(eq(leads.id, newLead.id));
+
+          // If sent successfully, create conversation + store initial message in memory
+          if (result.success) {
+            try {
+              const cleanPhone = phone.replace(/[^0-9]/g, "");
+              const [conv] = await db
+                .insert(waConversations)
+                .values({
+                  phone: cleanPhone,
+                  leadId: newLead.id,
+                  leadContext: {
+                    name,
+                    email,
+                    phone,
+                    occupation,
+                    resourceTitle: magnet.title,
+                  },
+                  stage: "greeting",
+                })
+                .returning();
+
+              // Store the initial automated message as assistant message
+              await db.insert(waMessages).values({
+                conversationId: conv.id,
+                role: "assistant",
+                content: message,
+              });
+
+              console.log(
+                `[WA Agent] Initial message stored in memory for ${cleanPhone} (conv: ${conv.id})`
+              );
+            } catch (memErr) {
+              console.error("Error storing initial message in memory:", memErr);
+            }
+          }
         } catch (err) {
           console.error("Error in WhatsApp send flow:", err);
           await db
