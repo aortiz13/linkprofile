@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       "| Instance:",
       body.instance
     );
+    console.log("[Webhook] Full payload:", JSON.stringify(body, null, 2));
 
     // Only process messages.upsert events
     if (body.event !== "messages.upsert") {
