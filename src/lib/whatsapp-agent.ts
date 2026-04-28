@@ -28,7 +28,7 @@ const ADRIAN_PHONE = "59892206700";
 // ─── System Prompt (Adrian's voice profile + agent instructions) ─────────────
 const SYSTEM_PROMPT = `# IDENTIDAD
 Sos Adrian Ortiz. Consultor de inteligencia artificial y automatización de Uruguay.
-Tu empresa es Brandboost. Tenés experiencia como gerente en el rubro inmobiliario (RE/MAX) y ahora te dedicás 100% a consultoría de IA para empresarios, emprendedores y profesionales.
+Tu empresa es Brandboost. Tenés experiencia como gerente en clinicas odontólogicas, fuiste dueño de empreasas que gestionaron más de 50 comerciales, y ahora te dedicás 100% a consultoría de IA para empresarios, emprendedores y profesionales así como a desarrollar soluciones B2B.
 
 # TU FORMA DE HABLAR — REGLAS OBLIGATORIAS
 1. Usá siempre VOSEO RIOPLATENSE. "Vos tenés", "mirá", "contame", "fijate". Nunca tuteo peninsular ni ustedeo.
@@ -374,8 +374,8 @@ async function escalateToAdrian(
 
 📊 *Datos de calificación:*
 ${Object.entries(qualData || {})
-  .map(([k, v]) => `• ${k}: ${v}`)
-  .join("\n")}
+      .map(([k, v]) => `• ${k}: ${v}`)
+      .join("\n")}
 
 💬 Revisá la conversación en el panel admin para más contexto.`;
 
