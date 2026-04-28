@@ -18,6 +18,7 @@ import {
 } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { sendWhatsAppMessage } from "@/lib/evolution-api";
+import { cancelNoReplyFollowups, resetNoReplyCount, scheduleNoReplyFollowups } from "@/lib/no-reply-followups";
 import crypto from "crypto";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -142,6 +143,25 @@ export async function processIncomingMessage(
   if (!conversation) {
     conversation = await createConversation(cleanPhone, senderName);
   }
+
+  // 1.5. Check if opted out
+  if (conversation.optedOut) {
+    console.log(`[WA Agent] ${cleanPhone} opted out. Checking for reactivation...`);
+    // Check if user wants to reactivate
+    const lower = messageText.toLowerCase();
+    if (lower.includes("quiero hablar") || lower.includes("quiero saber") || lower.includes("hola")) {
+      await db.update(waConversations)
+        .set({ optedOut: false, active: true, noReplyFollowups: 0, updatedAt: new Date() })
+        .where(eq(waConversations.id, conversation.id));
+      conversation = { ...conversation, optedOut: false, active: true, noReplyFollowups: 0 };
+    } else {
+      return; // Still opted out, ignore
+    }
+  }
+
+  // 1.6. Cancel any pending no-reply follow-ups (user responded!)
+  cancelNoReplyFollowups(cleanPhone);
+  await resetNoReplyCount(conversation.id);
 
   // Skip if conversation is inactive or already escalated
   if (!conversation.active) {
@@ -277,7 +297,26 @@ export async function processIncomingMessage(
     content: finalMessage,
   });
 
-  // 11. Update conversation state
+  // 11. Handle OPT-OUT detection
+  const lowerMsg = messageText.toLowerCase();
+  const optOutPhrases = ["no me escribas", "no quiero recibir", "dejá de escribir", "no me contactes", "para de escribir", "basta", "no me mandes"];
+  const isOptOut = optOutPhrases.some(p => lowerMsg.includes(p));
+
+  if (isOptOut) {
+    await db.update(waConversations)
+      .set({ optedOut: true, active: false, updatedAt: new Date() })
+      .where(eq(waConversations.id, conversation.id));
+    cancelNoReplyFollowups(cleanPhone);
+
+    const optOutReply = "Listo, no te voy a molestar más. Si en algún momento querés retomar la charla, mandame un mensaje y con gusto te ayudo. Éxitos! 🙌";
+    await sendWhatsAppMessage(cleanPhone, optOutReply);
+    await db.insert(waMessages).values({ conversationId: conversation.id, role: "assistant", content: optOutReply });
+    console.log(`[WA Agent] ${cleanPhone} opted out.`);
+    return;
+  }
+
+  // 12. Update conversation state
+  const leadCtx = conversation.leadContext as Record<string, string> | null;
   await db
     .update(waConversations)
     .set({
@@ -288,9 +327,13 @@ export async function processIncomingMessage(
         ...(conversation.qualificationData as Record<string, unknown>),
         ...agentResponse.qualification_data,
       },
+      lastAgentMessageAt: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(waConversations.id, conversation.id));
+
+  // 13. Schedule no-reply follow-ups
+  scheduleNoReplyFollowups(cleanPhone, conversation.id, leadCtx?.country || null);
 
   console.log(
     `[WA Agent] Processed message for ${cleanPhone} | Stage: ${agentResponse.stage} | Score: ${agentResponse.qualification_score}`
