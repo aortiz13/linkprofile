@@ -231,6 +231,17 @@ export async function processIncomingMessage(
         .update(waConversations)
         .set({ linkSent: true, updatedAt: new Date() })
         .where(eq(waConversations.id, conversation.id));
+
+      // Schedule a check in 10 minutes: if they didn't click, nudge them
+      const convId = conversation.id;
+      const convPhone = cleanPhone;
+      setTimeout(async () => {
+        try {
+          await sendNoClickNudge(convId, convPhone);
+        } catch (err) {
+          console.error("[WA Agent] No-click nudge error:", err);
+        }
+      }, 10 * 60 * 1000); // 10 minutes
     }
   }
 
@@ -479,5 +490,43 @@ async function sendFollowUp(conversationId: string, linkTokenId: string) {
       .where(eq(waConversations.id, conversationId));
 
     console.log(`[WA Agent] Follow-up sent for conversation ${conversationId}`);
+  }
+}
+
+// ─── Send nudge when link was NOT clicked after 10 minutes ───────────────────
+async function sendNoClickNudge(conversationId: string, phone: string) {
+  // Check if the link was already clicked
+  const [conv] = await db
+    .select()
+    .from(waConversations)
+    .where(eq(waConversations.id, conversationId))
+    .limit(1);
+
+  if (!conv || !conv.active) return;
+
+  // If they already clicked, don't nudge (the click follow-up handles it)
+  if (conv.linkClickedAt) {
+    console.log(`[WA Agent] Link already clicked for ${phone}, skipping nudge.`);
+    return;
+  }
+
+  const ctx = conv.leadContext as Record<string, string> | null;
+  const firstName = ctx?.name ? ctx.name.trim().split(/\s+/)[0] : "";
+
+  const nudgeMessage = firstName
+    ? `${firstName}, pudiste ver la info que te envié? 🙂`
+    : `Pudiste ver la info que te envié? 🙂`;
+
+  const result = await sendWhatsAppMessage(phone, nudgeMessage);
+
+  if (result.success) {
+    // Store the nudge message in memory
+    await db.insert(waMessages).values({
+      conversationId,
+      role: "assistant",
+      content: nudgeMessage,
+    });
+
+    console.log(`[WA Agent] No-click nudge sent to ${phone}`);
   }
 }
