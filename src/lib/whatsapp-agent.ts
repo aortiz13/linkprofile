@@ -13,11 +13,12 @@ import {
   waConversations,
   waMessages,
   waLinkTokens,
+  waAudioSnippets,
   leads,
   leadMagnets,
 } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { sendWhatsAppMessage } from "@/lib/evolution-api";
+import { sendWhatsAppMessage, sendWhatsAppAudio } from "@/lib/evolution-api";
 import { cancelNoReplyFollowups, resetNoReplyCount, scheduleNoReplyFollowups } from "@/lib/no-reply-followups";
 import crypto from "crypto";
 
@@ -104,6 +105,13 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - Solo invitá a mandar audio UNA vez en la conversación, no insistas.
 - Si el audio no se pudo procesar, pedí amablemente que lo reenvíe o escriba un texto.
 
+# AUDIOS PRE-GRABADOS
+- Tenés audios pre-grabados tuyos que podés enviar en momentos clave de la conversación.
+- Para enviar un audio, incluí la acción "SEND_AUDIO:trigger_key" en el array de acciones.
+- Enviá máximo UN audio por conversación. Usalo estratégicamente cuando genere más impacto que un texto.
+- El audio se envía ANTES del mensaje de texto. El texto debe complementar el audio, no repetirlo.
+- Los audios disponibles se listan al final de este prompt.
+
 # FORMATO DE RESPUESTA
 Respondé SIEMPRE en formato JSON válido con esta estructura:
 {
@@ -116,7 +124,7 @@ Respondé SIEMPRE en formato JSON válido con esta estructura:
 
 - qualification_score: de 0 a 100 basado en las señales recogidas
 - qualification_data: JSON con las respuestas clave del prospecto: { "motivacion": "...", "usa_ia": true/false, "herramientas": [...], "objetivo": "...", "equipo": "...", "desafio": "...", "consultor_previo": true/false }
-- actions: array de acciones. Posibles valores: "SEND_LINK" (enviar link de asesorías), "ESCALATE" (escalar a Adrian por tema precio)
+- actions: array de acciones. Posibles valores: "SEND_LINK" (enviar link de asesorías), "ESCALATE" (escalar a Adrian por tema precio), "SEND_AUDIO:trigger_key" (enviar audio pre-grabado)
 
 IMPORTANTE: El campo "message" debe ser SOLO el texto del mensaje de WhatsApp, sin JSON ni formato técnico. Es lo que la persona va a leer.`;
 
@@ -200,9 +208,26 @@ export async function processIncomingMessage(
     contextPrefix = `[CONTEXTO INTERNO - NO mostrar al usuario: La persona se llama "${ctx.name || senderName || "desconocido"}", su ocupación es "${ctx.occupation || "no especificada"}", descargó el recurso "${ctx.resourceTitle || "recurso"}". Su email es ${ctx.email || "no disponible"}. Este es su PRIMER mensaje respondiendo a tu mensaje automatizado inicial.]\n\n`;
   }
 
+  // 5.5. Load available audio snippets for the prompt
+  const audioSnippets = await db
+    .select({
+      triggerKey: waAudioSnippets.triggerKey,
+      name: waAudioSnippets.name,
+      description: waAudioSnippets.description,
+    })
+    .from(waAudioSnippets)
+    .where(eq(waAudioSnippets.active, true));
+
+  let audioPromptSection = "";
+  if (audioSnippets.length > 0) {
+    audioPromptSection = `\n\n# AUDIOS DISPONIBLES\n${audioSnippets
+      .map((a) => `- trigger_key: "${a.triggerKey}" | ${a.name}: ${a.description}`)
+      .join("\n")}`;
+  }
+
   // 6. Call OpenAI
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: SYSTEM_PROMPT + audioPromptSection },
     ...chatHistory,
     { role: "user", content: contextPrefix + messageText },
   ];
@@ -284,7 +309,33 @@ export async function processIncomingMessage(
     }
   }
 
-  // 9. Send the response via WhatsApp
+  // 9. Handle SEND_AUDIO action — send audio BEFORE text message
+  const audioAction = agentResponse.actions?.find((a) => a.startsWith("SEND_AUDIO:"));
+  if (audioAction) {
+    const triggerKey = audioAction.replace("SEND_AUDIO:", "");
+    const [snippet] = await db
+      .select()
+      .from(waAudioSnippets)
+      .where(and(eq(waAudioSnippets.triggerKey, triggerKey), eq(waAudioSnippets.active, true)))
+      .limit(1);
+
+    if (snippet) {
+      const audioResult = await sendWhatsAppAudio(cleanPhone, snippet.audioBase64);
+      if (audioResult.success) {
+        console.log(`[WA Agent] Audio "${triggerKey}" sent to ${cleanPhone}`);
+        // Store audio send as a message for context
+        await db.insert(waMessages).values({
+          conversationId: conversation.id,
+          role: "assistant",
+          content: `[Audio enviado: ${snippet.name}]`,
+        });
+      } else {
+        console.error(`[WA Agent] Failed to send audio "${triggerKey}":`, audioResult.error);
+      }
+    }
+  }
+
+  // 10. Send the text response via WhatsApp
   const sendResult = await sendWhatsAppMessage(cleanPhone, finalMessage);
   if (!sendResult.success) {
     console.error("[WA Agent] Failed to send message:", sendResult.error);

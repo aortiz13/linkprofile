@@ -269,6 +269,23 @@ export const waLinkTokens = pgTable(
   (t) => [index("wa_link_token_idx").on(t.token)]
 );
 
+// ─── WhatsApp Agent – Pre-recorded Audio Snippets ────────────────────────────
+export const waAudioSnippets = pgTable(
+  "wa_audio_snippets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(), // "Saludo personal", "Invitación asesoría"
+    triggerKey: text("trigger_key").notNull().unique(), // "greeting", "value_pitch", "closing"
+    description: text("description").notNull(), // When this audio should be sent
+    audioBase64: text("audio_base64").notNull(), // Base64-encoded audio (OGG/Opus)
+    audioDuration: integer("audio_duration"), // Duration in seconds
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("wa_audio_trigger_idx").on(t.triggerKey)]
+);
+
 // ─── Type exports ────────────────────────────────────────────────────────────
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
@@ -288,4 +305,4 @@ export type NewLeadMagnet = typeof leadMagnets.$inferInsert;
 export type WaConversation = typeof waConversations.$inferSelect;
 export type WaMessage = typeof waMessages.$inferSelect;
 export type WaLinkToken = typeof waLinkTokens.$inferSelect;
-
+export type WaAudioSnippet = typeof waAudioSnippets.$inferSelect;

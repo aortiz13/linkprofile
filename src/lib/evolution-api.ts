@@ -132,3 +132,52 @@ export async function getMediaBase64(messageData: {
     return null;
   }
 }
+
+/**
+ * Send a WhatsApp audio message (voice note) using Evolution API.
+ * @param phone - Recipient phone number
+ * @param audioBase64 - Base64-encoded audio (OGG/Opus format)
+ */
+export async function sendWhatsAppAudio(
+  phone: string,
+  audioBase64: string
+): Promise<WhatsAppMessageResult> {
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+
+  if (!cleanPhone || cleanPhone.length < 8) {
+    return { success: false, error: "Número de teléfono inválido" };
+  }
+
+  try {
+    const url = `${EVOLUTION_API_URL}/message/sendWhatsAppAudio/${EVOLUTION_INSTANCE}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: EVOLUTION_API_KEY,
+      },
+      body: JSON.stringify({
+        number: cleanPhone,
+        audio: audioBase64,
+        encoding: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`Evolution API audio error (${response.status}):`, errorBody);
+      return {
+        success: false,
+        error: `API audio error ${response.status}: ${errorBody.slice(0, 200)}`,
+      };
+    }
+
+    console.log(`[Evolution] Audio sent to ${cleanPhone}`);
+    return { success: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Error desconocido";
+    console.error("Evolution API audio fetch error:", msg);
+    return { success: false, error: msg };
+  }
+}

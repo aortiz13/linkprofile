@@ -10,6 +10,7 @@ import {
   Zap,
   Users,
   Gift,
+  Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/admin/dashboard", label: "Analítica", icon: BarChart3 },
   { href: "/admin/leads", label: "Leads", icon: Users },
   { href: "/admin/lead-magnets", label: "Lead Magnets", icon: Gift },
+  { href: "/admin/audio-snippets", label: "Audios WA", icon: Mic },
   { href: "/admin/profile", label: "Page Builder", icon: LayoutTemplate },
   { href: "/admin/features", label: "Features", icon: Zap },
 ];
