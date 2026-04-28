@@ -21,8 +21,10 @@ export function interpolateMessage(
   data: Record<string, string | null | undefined>
 ): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
+    const firstName = data.name ? data.name.trim().split(/\s+/)[0] : null;
+
     const map: Record<string, string | null | undefined> = {
-      nombre: data.name,
+      nombre: firstName,
       email: data.email,
       whatsapp: data.phone,
       telefono: data.phone,
