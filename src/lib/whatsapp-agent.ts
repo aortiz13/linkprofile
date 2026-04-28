@@ -4,10 +4,10 @@
  * Processes incoming WhatsApp messages, qualifies leads conversationally,
  * and guides them toward booking an asesoria with Adrian Ortiz.
  *
- * Uses Gemini 2.0 Flash with Adrian's voice profile for natural conversation.
+ * Uses OpenAI GPT-4o-mini with Adrian's voice profile for natural conversation.
  */
 
-import { GoogleGenerativeAI, type Content } from "@google/generative-ai";
+import OpenAI from "openai";
 import { db } from "@/lib/db";
 import {
   waConversations,
@@ -21,7 +21,7 @@ import { sendWhatsAppMessage } from "@/lib/evolution-api";
 import crypto from "crypto";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://adrian-ortiz.com";
 const ADRIAN_PHONE = "59892206700";
 
@@ -156,58 +156,44 @@ export async function processIncomingMessage(
     .orderBy(waMessages.createdAt)
     .limit(30);
 
-  // 4. Build Gemini chat history
-  const geminiHistory: Content[] = history.slice(0, -1).map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
+  // 4. Build OpenAI chat history
+  const chatHistory: OpenAI.Chat.ChatCompletionMessageParam[] = history
+    .slice(0, -1)
+    .map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
 
   // 5. Build contextual user message
   const ctx = conversation.leadContext as Record<string, string> | null;
   let contextPrefix = "";
-  if (geminiHistory.length === 0 && ctx) {
+  if (chatHistory.length === 0 && ctx) {
     // First message — inject context
     contextPrefix = `[CONTEXTO INTERNO - NO mostrar al usuario: La persona se llama "${ctx.name || senderName || "desconocido"}", su ocupación es "${ctx.occupation || "no especificada"}", descargó el recurso "${ctx.resourceTitle || "recurso"}". Su email es ${ctx.email || "no disponible"}. Este es su PRIMER mensaje respondiendo a tu mensaje automatizado inicial.]\n\n`;
   }
 
-  // 6. Call Gemini (with retry for rate limits)
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    systemInstruction: SYSTEM_PROMPT,
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0.85,
-    },
+  // 6. Call OpenAI
+  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...chatHistory,
+    { role: "user", content: contextPrefix + messageText },
+  ];
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages,
+    temperature: 0.85,
+    response_format: { type: "json_object" },
   });
 
-  const chat = model.startChat({ history: geminiHistory });
-
-  let responseText = "";
-  const MAX_RETRIES = 3;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const result = await chat.sendMessage(contextPrefix + messageText);
-      responseText = result.response.text();
-      break; // success
-    } catch (err: unknown) {
-      const status = (err as { status?: number }).status;
-      if (status === 429 && attempt < MAX_RETRIES) {
-        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
-        console.warn(`[WA Agent] Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${attempt}/${MAX_RETRIES})`);
-        await new Promise((r) => setTimeout(r, delay));
-      } else {
-        throw err; // non-retryable or exhausted retries
-      }
-    }
-  }
+  const responseText = completion.choices[0]?.message?.content || "";
 
   // 7. Parse the JSON response
   let agentResponse: AgentResponse;
   try {
     agentResponse = JSON.parse(responseText);
   } catch {
-    console.error("[WA Agent] Failed to parse Gemini response:", responseText);
+    console.error("[WA Agent] Failed to parse OpenAI response:", responseText);
     // Fallback: use raw text as message
     agentResponse = {
       message: responseText,
