@@ -42,8 +42,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "ignored", reason: "group_message" });
     }
 
-    // Extract phone number from remoteJid (format: 5491155551234@s.whatsapp.net)
-    const phone = remoteJid.split("@")[0];
+    // Extract phone number — handle LID (Linked ID) format
+    // When remoteJid ends with @lid, the real phone is in remoteJidAlt
+    let phoneJid = remoteJid;
+    if (remoteJid.endsWith("@lid") && data.key.remoteJidAlt) {
+      phoneJid = data.key.remoteJidAlt;
+    }
+    const phone = phoneJid.split("@")[0];
+    console.log(`[Webhook] remoteJid: ${remoteJid} | resolved phone: ${phone}`);
+
     if (!phone || phone.length < 8) {
       return NextResponse.json(
         { status: "error", reason: "invalid_phone" },
