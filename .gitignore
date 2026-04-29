@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Scratch scripts
 scratch/
+
+# Nested app copy (do not track)
+app/
