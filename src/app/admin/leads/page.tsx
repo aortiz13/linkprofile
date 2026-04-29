@@ -245,31 +245,53 @@ export default function LeadsPage() {
                     {/* Agent toggle switch */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       {lead.waConversationId ? (
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", zIndex: 10 }}
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        >
                           <button
-                            onClick={() =>
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
                               toggleAgent.mutate({
                                 conversationId: lead.waConversationId!,
                                 active: !lead.waAgentActive,
-                              })
-                            }
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                              lead.waAgentActive
-                                ? "bg-emerald-500"
-                                : "bg-[var(--border)]"
-                            }`}
+                              });
+                            }}
+                            style={{
+                              position: "relative",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              height: 22,
+                              width: 40,
+                              borderRadius: 99,
+                              border: "none",
+                              cursor: "pointer",
+                              transition: "background-color 0.2s ease",
+                              background: lead.waAgentActive ? "#10b981" : "#d1d5db",
+                              padding: 0,
+                              flexShrink: 0,
+                            }}
                             title={lead.waAgentActive ? "Agente activo — click para desactivar" : "Agente inactivo — click para activar"}
                           >
                             <span
-                              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                                lead.waAgentActive ? "translate-x-[18px]" : "translate-x-[3px]"
-                              }`}
+                              style={{
+                                display: "block",
+                                height: 16,
+                                width: 16,
+                                borderRadius: "50%",
+                                background: "white",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                transition: "transform 0.2s ease",
+                                transform: lead.waAgentActive ? "translateX(20px)" : "translateX(3px)",
+                              }}
                             />
                           </button>
-                          <Bot className={`w-3.5 h-3.5 ${lead.waAgentActive ? "text-emerald-500" : "text-[var(--text-muted)] opacity-40"}`} />
+                          <Bot style={{ width: 14, height: 14, color: lead.waAgentActive ? "#10b981" : "var(--text-muted)", opacity: lead.waAgentActive ? 1 : 0.4 }} />
                         </div>
                       ) : (
-                        <span className="text-[10px] text-[var(--text-muted)] opacity-50">—</span>
+                        <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
