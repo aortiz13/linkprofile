@@ -192,8 +192,8 @@ async function sendNoReplyFollowup(
     case 1:
       // 30 minutes - gentle check-in
       message = firstName
-        ? `${firstName}, todo bien? Quedé pensando en lo que charlamos 💭`
-        : `Todo bien? Quedé pensando en lo que charlamos 💭`;
+        ? `${firstName}, pudiste ver mi mensaje? 😊`
+        : `Hola! Pudiste ver mi mensaje? 😊`;
       break;
 
     case 2:

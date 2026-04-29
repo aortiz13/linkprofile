@@ -7,6 +7,7 @@ import {
   sendWhatsAppMessage,
   interpolateMessage,
 } from "@/lib/evolution-api";
+import { scheduleNoReplyFollowups } from "@/lib/no-reply-followups";
 
 const submitSchema = z.object({
   slug: z.string().min(1),
@@ -129,6 +130,9 @@ export async function POST(req: Request) {
               console.log(
                 `[WA Agent] Initial message stored in memory for ${cleanPhone} (conv: ${conv.id})`
               );
+
+              // Schedule follow-up if they don't respond
+              scheduleNoReplyFollowups(cleanPhone, conv.id, country || null);
             } catch (memErr) {
               console.error("Error storing initial message in memory:", memErr);
             }
