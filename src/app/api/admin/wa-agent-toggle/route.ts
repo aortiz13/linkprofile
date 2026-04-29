@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { waConversations } from "@/lib/db/schema";
+import { waConversations, leads } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 // PATCH /api/admin/wa-agent-toggle
@@ -19,7 +19,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Missing conversationId or active" }, { status: 400 });
     }
 
-    await db
+    // Update conversation
+    const [conv] = await db
       .update(waConversations)
       .set({
         active,
@@ -27,7 +28,16 @@ export async function PATCH(req: NextRequest) {
         stage: active ? "greeting" : "inactive",
         updatedAt: new Date(),
       })
-      .where(eq(waConversations.id, conversationId));
+      .where(eq(waConversations.id, conversationId))
+      .returning({ leadId: waConversations.leadId });
+
+    // Auto-move lead to "asesor_humano" when bot is deactivated
+    if (!active && conv?.leadId) {
+      await db
+        .update(leads)
+        .set({ funnelStage: "asesor_humano" })
+        .where(eq(leads.id, conv.leadId));
+    }
 
     console.log(`[Admin] Agent ${active ? "activated" : "deactivated"} for conversation ${conversationId}`);
 

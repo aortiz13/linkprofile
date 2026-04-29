@@ -90,6 +90,9 @@ export const leads = pgTable("leads", {
   whatsappStatus: text("whatsapp_status"), // null | 'pending' | 'sent' | 'error'
   whatsappError: text("whatsapp_error"),
   whatsappSentAt: timestamp("whatsapp_sent_at"),
+  // Sales funnel
+  funnelStage: text("funnel_stage").notNull().default("lead"),
+  // lead | nutrido_bot | asesor_humano | reunion_agendada | seguimiento | cierre_ganado | cierre_perdido
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -304,6 +304,14 @@ export async function processIncomingMessage(
         .set({ linkSent: true, updatedAt: new Date() })
         .where(eq(waConversations.id, conversation.id));
 
+      // Auto-move lead to "nutrido_bot" funnel stage
+      if (conversation.leadId) {
+        await db
+          .update(leads)
+          .set({ funnelStage: "nutrido_bot" })
+          .where(eq(leads.id, conversation.leadId));
+      }
+
       // Schedule a check in 10 minutes: if they didn't click, nudge them
       const convId = conversation.id;
       const convPhone = cleanPhone;
