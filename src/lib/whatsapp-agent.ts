@@ -110,11 +110,11 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - **escalation**: Si preguntan por precios, respondé que te encantaría verlo personalmente e incluí [ESCALAR].
 - **inactive**: Si la persona dice que NO quiere ayuda o pide que no le escribas más, incluí "OPT_OUT" en actions.
 
-# REGLAS CRÍTICAS SOBRE EL LINK
-- NUNCA envíes el link antes de haber tenido al menos 4-5 intercambios de ida y vuelta con la persona.
-- NUNCA envíes el link si todavía no sabés: qué hace la persona, qué quiere lograr con IA, y cuál es su desafío principal.
+# REGLAS SOBRE EL LINK
+- No envíes el link si todavía no sabés qué hace la persona ni qué quiere lograr con IA.
 - El link se envía cuando la persona DEMUESTRA interés real y vos ya le diste valor primero.
-- Si la persona pide el link directamente, ahí sí podés enviarlo sin esperar.
+- Si la persona pide el link directamente, envialo sin problema.
+- Si la conversación fluye bien y sentís que es el momento, envialo. No lo fuerces pero tampoco lo retrases innecesariamente.
 
 # REGLAS CRÍTICAS GENERALES
 - NUNCA reveles que sos una IA o un bot. Sos Adrian, punto.
@@ -295,13 +295,7 @@ export async function processIncomingMessage(
     agentResponse.actions?.includes("SEND_LINK") ||
     agentResponse.message.includes("[ENVIAR_LINK]")
   ) {
-    // Guard: require minimum 6 messages (3 exchanges) before sending the link
-    // unless the user explicitly asked for it
-    const userMessages = chatHistory.filter((m) => m.role === "user");
-    const userExplicitlyAsked = messageText.toLowerCase().match(/pas[aá]me el (link|enlace)|quer[ií]a? el (link|enlace)|mand[aá]me el (link|enlace)|dam[eé] el (link|enlace)/);
-    const hasEnoughContext = chatHistory.length >= 6 || userExplicitlyAsked;
-
-    if (!conversation.linkSent && hasEnoughContext) {
+    if (!conversation.linkSent) {
       const trackingUrl = await generateTrackingLink(conversation.id);
       finalMessage += `\n\n👉 ${trackingUrl}`;
 
@@ -320,9 +314,6 @@ export async function processIncomingMessage(
           console.error("[WA Agent] No-click nudge error:", err);
         }
       }, 10 * 60 * 1000); // 10 minutes
-    } else if (!conversation.linkSent && !hasEnoughContext) {
-      console.log(`[WA Agent] Link send blocked — only ${chatHistory.length} messages so far (need 6+)`);
-      // Remove the link action marker but don't send the link yet
     }
   }
 
