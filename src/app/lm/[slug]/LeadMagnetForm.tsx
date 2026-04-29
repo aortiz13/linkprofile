@@ -333,21 +333,27 @@ export function LeadMagnetForm({
           {/* WhatsApp */}
           {showWhatsapp && (
             <>
-            <div className="flex gap-2">
+            <div className="flex gap-2" style={{ position: "relative", zIndex: phoneCountryOpen ? 100 : 1 }}>
               {/* Country code selector */}
               <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setPhoneCountryOpen(!phoneCountryOpen); }}
-                  className={`flex items-center gap-1.5 bg-[var(--bg-surface)] border rounded-xl px-3 py-3.5 text-sm transition-all min-w-[100px] ${
-                    phoneCountryOpen
-                      ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/20"
-                      : "border-[var(--border)] hover:border-[var(--border-hover)]"
-                  }`}
+                  className="flex items-center gap-1.5 bg-[var(--bg-surface)] rounded-xl px-3 py-3.5 text-sm transition-all min-w-[100px]"
+                  style={{
+                    border: phoneCountryOpen ? "1px solid var(--accent)" : "1px solid var(--border)",
+                    boxShadow: phoneCountryOpen ? "0 0 0 2px rgba(6, 182, 212, 0.2)" : undefined,
+                  }}
                 >
                   <span className="text-base leading-none">{countryCode.flag}</span>
                   <span className="text-[var(--text-primary)] font-medium">{countryCode.code}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform ${phoneCountryOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    style={{
+                      width: 14, height: 14, color: "var(--text-muted)",
+                      transition: "transform 0.2s",
+                      transform: phoneCountryOpen ? "rotate(180deg)" : undefined,
+                    }}
+                  />
                 </button>
 
                 <AnimatePresence>
@@ -357,22 +363,34 @@ export function LeadMagnetForm({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute z-50 w-56 mt-1.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+                      style={{
+                        position: "absolute",
+                        zIndex: 9999,
+                        width: 224,
+                        marginTop: 6,
+                        background: "var(--bg-surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 12,
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1)",
+                        maxHeight: 220,
+                        overflowY: "auto",
+                      }}
                     >
                       {COUNTRY_CODES.map((c) => (
                         <button
                           key={c.code}
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setCountryCode(c); setPhoneCountryOpen(false); }}
-                          className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors ${
-                            countryCode.code === c.code
-                              ? "bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
-                              : "text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
-                          }`}
+                          className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors hover:bg-[var(--bg-elevated)]"
+                          style={{
+                            background: countryCode.code === c.code ? "rgba(6, 182, 212, 0.1)" : undefined,
+                            color: countryCode.code === c.code ? "var(--accent)" : "var(--text-primary)",
+                            fontWeight: countryCode.code === c.code ? 500 : undefined,
+                          }}
                         >
                           <span className="text-base leading-none">{c.flag}</span>
                           <span className="flex-1">{c.name}</span>
-                          <span className="text-[var(--text-muted)] text-xs">{c.code}</span>
+                          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{c.code}</span>
                         </button>
                       ))}
                     </motion.div>
@@ -439,7 +457,7 @@ export function LeadMagnetForm({
 
           {/* Occupation dropdown */}
           {showOccupation && (
-            <div className="relative">
+            <div style={{ position: "relative", zIndex: dropdownOpen ? 100 : 1 }}>
               <Briefcase style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "var(--text-muted)", zIndex: 10 }} />
               <button
                 type="button"
@@ -471,7 +489,17 @@ export function LeadMagnetForm({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute z-50 w-full mt-1.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden"
+                    style={{
+                      position: "absolute",
+                      zIndex: 9999,
+                      width: "100%",
+                      marginTop: 6,
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1)",
+                      overflow: "hidden",
+                    }}
                   >
                     {occupationOptions.map((opt) => (
                       <button
