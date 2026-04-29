@@ -333,6 +333,7 @@ export async function processIncomingMessage(
   }
 
   // Send the audio if we have a trigger
+  let audioWasSent = false;
   if (autoAudioTrigger) {
     const [snippet] = await db
       .select()
@@ -344,6 +345,7 @@ export async function processIncomingMessage(
       const audioResult = await sendWhatsAppAudio(cleanPhone, snippet.audioBase64);
       if (audioResult.success) {
         console.log(`[WA Agent] Audio "${autoAudioTrigger}" sent to ${cleanPhone}`);
+        audioWasSent = true;
         await db.insert(waMessages).values({
           conversationId: conversation.id,
           role: "assistant",
@@ -354,6 +356,14 @@ export async function processIncomingMessage(
       } else {
         console.error(`[WA Agent] Failed to send audio "${autoAudioTrigger}":`, audioResult.error);
       }
+    }
+  }
+
+  // If audio was sent alongside the link, strip the LLM text and keep only the URL
+  if (audioWasSent && autoAudioTrigger === "link_offer") {
+    const urlMatch = finalMessage.match(/(https?:\/\/[^\s]+)/);
+    if (urlMatch) {
+      finalMessage = `👉 ${urlMatch[1]}`;
     }
   }
 
