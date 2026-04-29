@@ -309,28 +309,50 @@ export async function processIncomingMessage(
     }
   }
 
-  // 9. Handle SEND_AUDIO action — send audio BEFORE text message
+  // 9. Auto-send pre-recorded audio based on action/stage
+  //    Map actions and stages to audio trigger keys
+  let autoAudioTrigger: string | null = null;
+
+  // Check LLM-requested audio first
   const audioAction = agentResponse.actions?.find((a) => a.startsWith("SEND_AUDIO:"));
   if (audioAction) {
-    const triggerKey = audioAction.replace("SEND_AUDIO:", "");
+    autoAudioTrigger = audioAction.replace("SEND_AUDIO:", "");
+  }
+
+  // Auto-trigger based on actions (higher priority)
+  if (
+    !autoAudioTrigger &&
+    (agentResponse.actions?.includes("SEND_LINK") || agentResponse.message.includes("[ENVIAR_LINK]"))
+  ) {
+    autoAudioTrigger = "link_offer";
+  }
+
+  // Auto-trigger based on stage transitions (only on first message of that stage)
+  if (!autoAudioTrigger && chatHistory.length === 0) {
+    autoAudioTrigger = "greeting"; // First message ever
+  }
+
+  // Send the audio if we have a trigger
+  if (autoAudioTrigger) {
     const [snippet] = await db
       .select()
       .from(waAudioSnippets)
-      .where(and(eq(waAudioSnippets.triggerKey, triggerKey), eq(waAudioSnippets.active, true)))
+      .where(and(eq(waAudioSnippets.triggerKey, autoAudioTrigger), eq(waAudioSnippets.active, true)))
       .limit(1);
 
     if (snippet) {
       const audioResult = await sendWhatsAppAudio(cleanPhone, snippet.audioBase64);
       if (audioResult.success) {
-        console.log(`[WA Agent] Audio "${triggerKey}" sent to ${cleanPhone}`);
-        // Store audio send as a message for context
+        console.log(`[WA Agent] Audio "${autoAudioTrigger}" sent to ${cleanPhone}`);
         await db.insert(waMessages).values({
           conversationId: conversation.id,
           role: "assistant",
           content: `[Audio enviado: ${snippet.name}]`,
         });
+        // Small delay so audio arrives before text
+        await new Promise((r) => setTimeout(r, 2000));
       } else {
-        console.error(`[WA Agent] Failed to send audio "${triggerKey}":`, audioResult.error);
+        console.error(`[WA Agent] Failed to send audio "${autoAudioTrigger}":`, audioResult.error);
       }
     }
   }
