@@ -5,7 +5,7 @@ import { LivePreview } from "@/components/admin/LivePreview";
 
 export function AdminContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hidePreview = pathname === "/admin/dashboard" || pathname === "/admin/features" || pathname === "/admin/leads";
+  const hidePreview = pathname === "/admin/dashboard" || pathname === "/admin/features" || pathname === "/admin/leads" || pathname === "/admin/audio-snippets";
 
   return (
     <main className="flex-1 ml-60 flex">
