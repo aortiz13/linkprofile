@@ -99,24 +99,29 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - ¿Tenés un equipo o trabajás solo? → Tamaño de negocio
 - ¿Cuál es tu mayor desafío ahora mismo? → Pain points / urgencia
 
-# FLUJO DE CONVERSACIÓN POR ETAPAS
+# FLUJO DE CONVERSACIÓN POR ETAPAS (OBLIGATORIO seguir este orden)
 - **greeting**: Recibís la primera respuesta. Generá rapport, preguntá algo natural. Ejemplo: "Buenísimo, ¿qué fue lo que más te llamó la atención?"
-- **discovery**: Profundizá en su situación actual. ¿Qué hacen? ¿Cómo usan (o no) la IA?
-- **qualification**: Hacé las preguntas de calificación de forma natural, como si charlaras con un amigo.
-- **value_delivery**: Compartí un insight relevante basado en sus respuestas. Demostrá tu expertise con un caso propio.
-- **link_offer**: Ofrecé la asesoría como paso natural. Incluí [ENVIAR_LINK] en tu respuesta.
+- **discovery**: Profundizá en su situación actual. ¿Qué hacen? ¿Cómo usan (o no) la IA? MÍNIMO 2-3 intercambios acá.
+- **qualification**: Hacé las preguntas de calificación de forma natural. MÍNIMO 2-3 intercambios más.
+- **value_delivery**: Compartí un insight relevante basado en lo que aprendiste de la persona. Demostrá tu expertise con un caso propio. Este paso es OBLIGATORIO antes de ofrecer el link.
+- **link_offer**: SOLO después de haber pasado por discovery + qualification + value_delivery. Ofrecé la asesoría como paso natural. Incluí [ENVIAR_LINK].
 - **followup**: Si ya hicieron click en el link, preguntá qué les pareció.
 - **closing**: Consolidá el interés y llevá hacia el agendamiento.
 - **escalation**: Si preguntan por precios, respondé que te encantaría verlo personalmente e incluí [ESCALAR].
-- **inactive**: Si la persona dice que NO quiere ayuda, NO necesita, o pide que no le escribas más, pasá a esta etapa e incluí "OPT_OUT" en actions.
+- **inactive**: Si la persona dice que NO quiere ayuda o pide que no le escribas más, incluí "OPT_OUT" en actions.
 
-# REGLAS CRÍTICAS
+# REGLAS CRÍTICAS SOBRE EL LINK
+- NUNCA envíes el link antes de haber tenido al menos 4-5 intercambios de ida y vuelta con la persona.
+- NUNCA envíes el link si todavía no sabés: qué hace la persona, qué quiere lograr con IA, y cuál es su desafío principal.
+- El link se envía cuando la persona DEMUESTRA interés real y vos ya le diste valor primero.
+- Si la persona pide el link directamente, ahí sí podés enviarlo sin esperar.
+
+# REGLAS CRÍTICAS GENERALES
 - NUNCA reveles que sos una IA o un bot. Sos Adrian, punto.
 - NUNCA inventes datos. Si no sabés algo, decilo.
 - NUNCA uses frases genéricas de chatbot. Hablá como Adrian habla de verdad.
 - Si el prospecto pregunta por PRECIOS, incluí "ESCALATE" en actions.
-- Cuando sea el momento de enviar el link, incluí "SEND_LINK" en actions.
-- No envíes el link demasiado pronto. Primero generá valor y conexión.
+- Cuando sea el momento de enviar el link (después de value_delivery), incluí "SEND_LINK" en actions.
 - Si la persona dice que NO quiere, NO necesita ayuda, o pide que no le escribas más, respondé amablemente, despedite con respeto e incluí "OPT_OUT" en actions. Ejemplo: "Dale, sin problema. Si en algún momento necesitás algo, acá estoy. Un abrazo 🙌"
 - MÁXIMO UNA pregunta por mensaje. NUNCA hagas dos preguntas juntas.
 - Mensajes CORTOS: máximo 2-3 líneas. Esto es WhatsApp, no un email.
@@ -290,7 +295,13 @@ export async function processIncomingMessage(
     agentResponse.actions?.includes("SEND_LINK") ||
     agentResponse.message.includes("[ENVIAR_LINK]")
   ) {
-    if (!conversation.linkSent) {
+    // Guard: require minimum 6 messages (3 exchanges) before sending the link
+    // unless the user explicitly asked for it
+    const userMessages = chatHistory.filter((m) => m.role === "user");
+    const userExplicitlyAsked = messageText.toLowerCase().match(/pas[aá]me el (link|enlace)|quer[ií]a? el (link|enlace)|mand[aá]me el (link|enlace)|dam[eé] el (link|enlace)/);
+    const hasEnoughContext = chatHistory.length >= 6 || userExplicitlyAsked;
+
+    if (!conversation.linkSent && hasEnoughContext) {
       const trackingUrl = await generateTrackingLink(conversation.id);
       finalMessage += `\n\n👉 ${trackingUrl}`;
 
@@ -309,6 +320,9 @@ export async function processIncomingMessage(
           console.error("[WA Agent] No-click nudge error:", err);
         }
       }, 10 * 60 * 1000); // 10 minutes
+    } else if (!conversation.linkSent && !hasEnoughContext) {
+      console.log(`[WA Agent] Link send blocked — only ${chatHistory.length} messages so far (need 6+)`);
+      // Remove the link action marker but don't send the link yet
     }
   }
 
@@ -385,19 +399,19 @@ export async function processIncomingMessage(
 
       if (snippet) {
         const audioResult = await sendWhatsAppAudio(cleanPhone, snippet.audioBase64);
-      if (audioResult.success) {
-        console.log(`[WA Agent] Audio "${autoAudioTrigger}" sent to ${cleanPhone}`);
-        audioWasSent = true;
-        await db.insert(waMessages).values({
-          conversationId: conversation.id,
-          role: "assistant",
-          content: `[Audio enviado: ${snippet.name}]`,
-        });
-        // Small delay so audio arrives before text
-        await new Promise((r) => setTimeout(r, 2000));
-      } else {
-        console.error(`[WA Agent] Failed to send audio "${autoAudioTrigger}":`, audioResult.error);
-      }
+        if (audioResult.success) {
+          console.log(`[WA Agent] Audio "${autoAudioTrigger}" sent to ${cleanPhone}`);
+          audioWasSent = true;
+          await db.insert(waMessages).values({
+            conversationId: conversation.id,
+            role: "assistant",
+            content: `[Audio enviado: ${snippet.name}]`,
+          });
+          // Small delay so audio arrives before text
+          await new Promise((r) => setTimeout(r, 2000));
+        } else {
+          console.error(`[WA Agent] Failed to send audio "${autoAudioTrigger}":`, audioResult.error);
+        }
       }
     }
   }
@@ -534,7 +548,8 @@ async function createConversation(phone: string, senderName?: string) {
 
 // ─── Generate tracking link ──────────────────────────────────────────────────
 async function generateTrackingLink(conversationId: string): Promise<string> {
-  const token = crypto.randomUUID();
+  // Generate a short 8-character alphanumeric code instead of a full UUID
+  const token = crypto.randomBytes(4).toString("hex"); // 8 chars like "a3f1b2c4"
 
   await db.insert(waLinkTokens).values({
     conversationId,
@@ -542,7 +557,7 @@ async function generateTrackingLink(conversationId: string): Promise<string> {
     targetUrl: "https://adrian-ortiz.com/asesorias",
   });
 
-  return `${APP_URL}/api/track/click?t=${token}`;
+  return `${APP_URL}/go/${token}`;
 }
 
 // ─── Escalate to Adrian ──────────────────────────────────────────────────────
@@ -633,8 +648,8 @@ async function sendFollowUp(conversationId: string, linkTokenId: string) {
   const firstName = ctx?.name ? ctx.name.trim().split(/\s+/)[0] : "";
 
   const followUpMessage = firstName
-    ? `Che ${firstName}! Vi que le echaste un vistazo a las asesorías 👀 ¿Qué te pareció? ¿Tenés alguna duda o consulta? Estoy para ayudarte en lo que necesites, de verdad.`
-    : `Che! Vi que le echaste un vistazo a las asesorías 👀 ¿Qué te pareció? ¿Tenés alguna duda o consulta? Estoy para ayudarte en lo que necesites.`;
+    ? `${firstName}! Vi que le echaste un vistazo a las asesorías 👀 ¿Qué te pareció? ¿Tenés alguna duda o consulta? Estoy para ayudarte en lo que necesites, de verdad.`
+    : `Buenas! Vi que le echaste un vistazo a las asesorías 👀 ¿Qué te pareció? ¿Tenés alguna duda? Estoy para ayudarte.`;
 
   const result = await sendWhatsAppMessage(conv.phone, followUpMessage);
 
