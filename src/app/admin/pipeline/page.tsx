@@ -52,13 +52,13 @@ interface LeadDetail {
 }
 
 const STAGES = [
-  { key: "lead", label: "Lead", icon: Users, gradient: "linear-gradient(135deg, #64748b, #475569)", btnBg: "#64748b" },
-  { key: "nutrido_bot", label: "Nutrido por Bot", icon: Bot, gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", btnBg: "#3b82f6" },
-  { key: "asesor_humano", label: "Asesor Humano", icon: UserCheck, gradient: "linear-gradient(135deg, #a855f7, #9333ea)", btnBg: "#a855f7" },
-  { key: "reunion_agendada", label: "Reunión Agendada", icon: CalendarCheck, gradient: "linear-gradient(135deg, #f59e0b, #d97706)", btnBg: "#f59e0b" },
-  { key: "seguimiento", label: "Seguimiento", icon: Clock, gradient: "linear-gradient(135deg, #06b6d4, #0891b2)", btnBg: "#06b6d4" },
-  { key: "cierre_ganado", label: "Cierre Ganado", icon: Trophy, gradient: "linear-gradient(135deg, #10b981, #059669)", btnBg: "#10b981" },
-  { key: "cierre_perdido", label: "Cierre Perdido", icon: XCircle, gradient: "linear-gradient(135deg, #ef4444, #dc2626)", btnBg: "#ef4444" },
+  { key: "lead", label: "Lead", icon: Users, gradient: "linear-gradient(135deg, #64748b, #475569)", bg: "#64748b" },
+  { key: "nutrido_bot", label: "Nutrido por Bot", icon: Bot, gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", bg: "#3b82f6" },
+  { key: "asesor_humano", label: "Asesor Humano", icon: UserCheck, gradient: "linear-gradient(135deg, #a855f7, #9333ea)", bg: "#a855f7" },
+  { key: "reunion_agendada", label: "Reunión Agendada", icon: CalendarCheck, gradient: "linear-gradient(135deg, #f59e0b, #d97706)", bg: "#f59e0b" },
+  { key: "seguimiento", label: "Seguimiento", icon: Clock, gradient: "linear-gradient(135deg, #06b6d4, #0891b2)", bg: "#06b6d4" },
+  { key: "cierre_ganado", label: "Cierre Ganado", icon: Trophy, gradient: "linear-gradient(135deg, #10b981, #059669)", bg: "#10b981" },
+  { key: "cierre_perdido", label: "Cierre Perdido", icon: XCircle, gradient: "linear-gradient(135deg, #ef4444, #dc2626)", bg: "#ef4444" },
 ];
 
 export default function PipelinePage() {
@@ -89,144 +89,214 @@ export default function PipelinePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["lead-detail", selectedLead] });
     },
   });
 
   const allLeads = data?.leads || [];
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 sm:p-6 w-full">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-          Embudo de Ventas
-        </h1>
-        <p className="text-[var(--text-muted)] mt-1">
-          Gestiona el progreso de cada lead a través del pipeline.
-        </p>
-      </div>
+    <>
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .drawer-overlay {
+          animation: fadeIn 0.2s ease-out forwards;
+        }
+        .drawer-panel {
+          animation: slideInRight 0.25s ease-out forwards;
+        }
+      `}</style>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="w-8 h-8 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin" />
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "16px 24px", width: "100%" }}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+            Embudo de Ventas
+          </h1>
+          <p style={{ color: "var(--text-muted)", marginTop: 4, fontSize: 14 }}>
+            Gestiona el progreso de cada lead a través del pipeline.
+          </p>
         </div>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "calc(100vh - 180px)" }}>
-          {STAGES.map((stage) => {
-            const stageLeads = allLeads.filter((l) => (l.funnelStage || "lead") === stage.key);
-            const Icon = stage.icon;
-            return (
-              <div
-                key={stage.key}
-                className="flex-shrink-0 w-[240px] flex flex-col bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl overflow-hidden"
-              >
-                {/* Column header */}
-                <div className="px-3 py-2.5 text-white" style={{ background: stage.gradient }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
-                      <span className="font-semibold text-xs">{stage.label}</span>
+
+        {isLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 256 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%",
+              border: "2px solid var(--border)", borderTopColor: "var(--accent)",
+              animation: "spin 1s linear infinite",
+            }} />
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16, minHeight: "calc(100vh - 180px)" }}>
+            {STAGES.map((stage) => {
+              const stageLeads = allLeads.filter((l) => (l.funnelStage || "lead") === stage.key);
+              const Icon = stage.icon;
+              return (
+                <div
+                  key={stage.key}
+                  style={{
+                    flexShrink: 0, width: 240, display: "flex", flexDirection: "column",
+                    background: "var(--bg-elevated)", border: "1px solid var(--border)",
+                    borderRadius: 12, overflow: "hidden",
+                  }}
+                >
+                  {/* Column header */}
+                  <div style={{ padding: "10px 12px", background: stage.gradient, color: "white" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Icon style={{ width: 16, height: 16 }} />
+                        <span style={{ fontWeight: 600, fontSize: 12 }}>{stage.label}</span>
+                      </div>
+                      <span style={{
+                        fontSize: 11, background: "rgba(255,255,255,0.25)", borderRadius: 99,
+                        padding: "2px 8px", fontWeight: 500,
+                      }}>
+                        {stageLeads.length}
+                      </span>
                     </div>
-                    <span className="text-xs bg-white/20 rounded-full px-2 py-0.5 font-medium">
-                      {stageLeads.length}
-                    </span>
+                  </div>
+
+                  {/* Cards */}
+                  <div style={{ flex: 1, padding: 8, overflowY: "auto", maxHeight: "calc(100vh - 260px)" }}>
+                    {stageLeads.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-muted)", fontSize: 12, opacity: 0.5 }}>
+                        Sin leads
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {stageLeads.map((lead) => (
+                          <div
+                            key={lead.id}
+                            onClick={() => setSelectedLead(lead.id)}
+                            style={{
+                              background: "var(--bg-surface)", border: "1px solid var(--border)",
+                              borderRadius: 8, padding: 12, cursor: "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "var(--accent)";
+                              e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "var(--border)";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
+                          >
+                            <p style={{ fontWeight: 600, fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {lead.name}
+                            </p>
+                            {lead.occupation && (
+                              <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+                                💼 {lead.occupation}
+                              </p>
+                            )}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                              {lead.phone && <Phone style={{ width: 12, height: 12, color: "var(--text-muted)" }} />}
+                              {lead.email && <Mail style={{ width: 12, height: 12, color: "var(--text-muted)" }} />}
+                              {lead.source && (
+                                <span style={{
+                                  fontSize: 9, padding: "2px 6px", borderRadius: 99,
+                                  background: "rgba(20, 184, 166, 0.1)", color: "#0d9488",
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100,
+                                }}>
+                                  {lead.source.replace("lead_magnet:", "")}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+                              <span style={{ fontSize: 9, color: "var(--text-muted)" }}>
+                                {format(new Date(lead.createdAt), "dd MMM", { locale: es })}
+                              </span>
+                              <ChevronRight style={{ width: 12, height: 12, color: "var(--text-muted)", opacity: 0.4 }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Cards */}
-                <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-260px)]">
-                  {stageLeads.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--text-muted)] text-xs opacity-50">
-                      Sin leads
-                    </div>
-                  ) : (
-                    stageLeads.map((lead) => (
-                      <div
-                        key={lead.id}
-                        onClick={() => setSelectedLead(lead.id)}
-                        className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg p-3 cursor-pointer hover:border-[var(--accent)] hover:shadow-sm transition-all group"
-                      >
-                        <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
-                          {lead.name}
-                        </p>
-                        {lead.occupation && (
-                          <p className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">
-                            💼 {lead.occupation}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          {lead.phone && (
-                            <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
-                              <Phone className="w-3 h-3" />
-                            </div>
-                          )}
-                          {lead.email && (
-                            <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
-                              <Mail className="w-3 h-3" />
-                            </div>
-                          )}
-                          {lead.source && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-600 truncate max-w-[100px]">
-                              {lead.source.replace("lead_magnet:", "")}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-[9px] text-[var(--text-muted)]">
-                            {format(new Date(lead.createdAt), "dd MMM", { locale: es })}
-                          </span>
-                          <ChevronRight className="w-3 h-3 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Lead detail drawer */}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
+          {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="drawer-overlay"
             onClick={() => setSelectedLead(null)}
+            style={{
+              position: "absolute", inset: 0,
+              background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+            }}
           />
-          <div className="relative w-full max-w-lg bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-2xl overflow-y-auto animate-in slide-in-from-right">
-            <div className="sticky top-0 bg-[var(--bg-elevated)] border-b border-[var(--border)] px-6 py-4 flex items-center justify-between z-10">
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">Detalle del Lead</h2>
-              <button onClick={() => setSelectedLead(null)} className="p-1 hover:bg-[var(--bg-surface)] rounded-lg transition-colors">
-                <X className="w-5 h-5 text-[var(--text-muted)]" />
+
+          {/* Panel */}
+          <div
+            className="drawer-panel"
+            style={{
+              position: "relative", width: "100%", maxWidth: 480,
+              background: "var(--bg-elevated, #fff)",
+              borderLeft: "1px solid var(--border, #e5e7eb)",
+              boxShadow: "-8px 0 30px rgba(0,0,0,0.15)",
+              overflowY: "auto",
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              position: "sticky", top: 0, zIndex: 10,
+              background: "var(--bg-elevated, #fff)",
+              borderBottom: "1px solid var(--border, #e5e7eb)",
+              padding: "16px 24px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary, #111)" }}>Detalle del Lead</h2>
+              <button
+                onClick={() => setSelectedLead(null)}
+                style={{
+                  padding: 4, borderRadius: 8, border: "none", cursor: "pointer",
+                  background: "transparent", display: "flex",
+                }}
+              >
+                <X style={{ width: 20, height: 20, color: "var(--text-muted, #888)" }} />
               </button>
             </div>
 
             {loadingDetail ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0" }}>
+                <Loader2 style={{ width: 24, height: 24, color: "var(--accent)", animation: "spin 1s linear infinite" }} />
               </div>
             ) : detail ? (
-              <div className="p-6 space-y-6">
+              <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 24 }}>
                 {/* Lead info */}
                 <div>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)]">{detail.lead.name}</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary, #111)" }}>{detail.lead.name}</h3>
                   {detail.lead.occupation && (
-                    <p className="text-sm text-[var(--text-muted)] mt-0.5">💼 {detail.lead.occupation}</p>
+                    <p style={{ fontSize: 13, color: "var(--text-muted, #888)", marginTop: 2 }}>💼 {detail.lead.occupation}</p>
                   )}
-                  <div className="flex flex-col gap-1.5 mt-3">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
                     {detail.lead.phone && (
                       <a
                         href={`https://wa.me/${detail.lead.phone.replace(/[^0-9]/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-blue-500 hover:underline"
+                        style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#3b82f6", textDecoration: "none" }}
                       >
-                        <Phone className="w-3.5 h-3.5" /> {detail.lead.phone}
+                        <Phone style={{ width: 14, height: 14 }} /> {detail.lead.phone}
                       </a>
                     )}
                     {detail.lead.email && (
-                      <a href={`mailto:${detail.lead.email}`} className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                        <Mail className="w-3.5 h-3.5" /> {detail.lead.email}
+                      <a href={`mailto:${detail.lead.email}`} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>
+                        <Mail style={{ width: 14, height: 14 }} /> {detail.lead.email}
                       </a>
                     )}
                   </div>
@@ -234,8 +304,10 @@ export default function PipelinePage() {
 
                 {/* Move stage */}
                 <div>
-                  <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Mover a etapa</label>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted, #888)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Mover a etapa
+                  </label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                     {STAGES.map((s) => {
                       const isCurrent = (detail.lead.funnelStage || "lead") === s.key;
                       return (
@@ -243,12 +315,15 @@ export default function PipelinePage() {
                           key={s.key}
                           disabled={isCurrent || moveStage.isPending}
                           onClick={() => moveStage.mutate({ leadId: detail.lead.id, stage: s.key })}
-                          className={`px-2.5 py-1 text-[10px] font-medium rounded-full border transition-all ${
-                            isCurrent
-                              ? "text-white border-transparent"
-                              : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-                          }`}
-                          style={isCurrent ? { background: s.gradient } : undefined}
+                          style={{
+                            padding: "4px 10px", fontSize: 10, fontWeight: 500,
+                            borderRadius: 99, border: isCurrent ? "none" : "1px solid var(--border, #e5e7eb)",
+                            background: isCurrent ? s.gradient : "transparent",
+                            color: isCurrent ? "white" : "var(--text-muted, #888)",
+                            cursor: isCurrent ? "default" : "pointer",
+                            opacity: isCurrent ? 1 : 0.8,
+                            transition: "all 0.15s ease",
+                          }}
                         >
                           {s.label}
                         </button>
@@ -259,24 +334,29 @@ export default function PipelinePage() {
 
                 {/* Conversation stats */}
                 {detail.conversation && (
-                  <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
-                    <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Conversación con Bot</h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div style={{
+                    background: "var(--bg-surface, #f9fafb)", border: "1px solid var(--border, #e5e7eb)",
+                    borderRadius: 12, padding: 16,
+                  }}>
+                    <h4 style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted, #888)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                      Conversación con Bot
+                    </h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 13 }}>
                       <div>
-                        <span className="text-[var(--text-muted)] text-xs">Mensajes</span>
-                        <p className="font-semibold text-[var(--text-primary)]">{detail.conversation.messageCount}</p>
+                        <span style={{ color: "var(--text-muted, #888)", fontSize: 11 }}>Mensajes</span>
+                        <p style={{ fontWeight: 600, color: "var(--text-primary, #111)" }}>{detail.conversation.messageCount}</p>
                       </div>
                       <div>
-                        <span className="text-[var(--text-muted)] text-xs">Score</span>
-                        <p className="font-semibold text-[var(--text-primary)]">{detail.conversation.qualificationScore}/100</p>
+                        <span style={{ color: "var(--text-muted, #888)", fontSize: 11 }}>Score</span>
+                        <p style={{ fontWeight: 600, color: "var(--text-primary, #111)" }}>{detail.conversation.qualificationScore}/100</p>
                       </div>
                       <div>
-                        <span className="text-[var(--text-muted)] text-xs">Link enviado</span>
-                        <p className="font-semibold text-[var(--text-primary)]">{detail.conversation.linkSent ? "✅ Sí" : "❌ No"}</p>
+                        <span style={{ color: "var(--text-muted, #888)", fontSize: 11 }}>Link enviado</span>
+                        <p style={{ fontWeight: 600, color: "var(--text-primary, #111)" }}>{detail.conversation.linkSent ? "✅ Sí" : "❌ No"}</p>
                       </div>
                       <div>
-                        <span className="text-[var(--text-muted)] text-xs">Bot activo</span>
-                        <p className="font-semibold text-[var(--text-primary)]">{detail.conversation.active ? "🟢 Sí" : "🔴 No"}</p>
+                        <span style={{ color: "var(--text-muted, #888)", fontSize: 11 }}>Bot activo</span>
+                        <p style={{ fontWeight: 600, color: "var(--text-primary, #111)" }}>{detail.conversation.active ? "🟢 Sí" : "🔴 No"}</p>
                       </div>
                     </div>
                   </div>
@@ -284,12 +364,19 @@ export default function PipelinePage() {
 
                 {/* AI Summary */}
                 {detail.summary && (
-                  <div className="bg-gradient-to-br from-[var(--accent)]/5 to-purple-500/5 border border-[var(--accent)]/20 rounded-xl p-4">
-                    <h4 className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5" />
+                  <div style={{
+                    background: "linear-gradient(135deg, rgba(59,130,246,0.05), rgba(168,85,247,0.05))",
+                    border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: 16,
+                  }}>
+                    <h4 style={{
+                      fontSize: 11, fontWeight: 600, color: "var(--accent, #3b82f6)",
+                      textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8,
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}>
+                      <MessageSquare style={{ width: 14, height: 14 }} />
                       Resumen de la conversación
                     </h4>
-                    <div className="text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
+                    <div style={{ fontSize: 13, color: "var(--text-primary, #111)", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                       {detail.summary}
                     </div>
                   </div>
@@ -298,26 +385,30 @@ export default function PipelinePage() {
                 {/* Chat history */}
                 {detail.messages && detail.messages.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Historial de Chat</h4>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                    <h4 style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted, #888)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                      Historial de Chat
+                    </h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 384, overflowY: "auto" }}>
                       {detail.messages.map((msg, i) => (
                         <div
                           key={i}
-                          className={`p-3 rounded-xl text-sm ${
-                            msg.role === "user"
-                              ? "bg-blue-500/10 border border-blue-500/20 ml-4"
-                              : "bg-[var(--bg-surface)] border border-[var(--border)] mr-4"
-                          }`}
+                          style={{
+                            padding: 12, borderRadius: 12, fontSize: 13,
+                            background: msg.role === "user" ? "rgba(59,130,246,0.08)" : "var(--bg-surface, #f9fafb)",
+                            border: `1px solid ${msg.role === "user" ? "rgba(59,130,246,0.15)" : "var(--border, #e5e7eb)"}`,
+                            marginLeft: msg.role === "user" ? 16 : 0,
+                            marginRight: msg.role === "user" ? 0 : 16,
+                          }}
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`text-[10px] font-semibold uppercase ${msg.role === "user" ? "text-blue-500" : "text-[var(--text-muted)]"}`}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: msg.role === "user" ? "#3b82f6" : "var(--text-muted, #888)" }}>
                               {msg.role === "user" ? "Lead" : "Adrian (Bot)"}
                             </span>
-                            <span className="text-[9px] text-[var(--text-muted)]">
+                            <span style={{ fontSize: 9, color: "var(--text-muted, #888)" }}>
                               {format(new Date(msg.createdAt), "dd/MM HH:mm", { locale: es })}
                             </span>
                           </div>
-                          <p className="text-[var(--text-primary)] whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p style={{ color: "var(--text-primary, #111)", whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0 }}>{msg.content}</p>
                         </div>
                       ))}
                     </div>
@@ -328,6 +419,6 @@ export default function PipelinePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
