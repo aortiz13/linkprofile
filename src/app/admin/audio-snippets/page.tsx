@@ -18,13 +18,13 @@ interface AudioSnippet {
 }
 
 const TRIGGER_PRESETS = [
-  { key: "greeting", label: "Saludo inicial", desc: "Se envía cuando el usuario manda su primer mensaje" },
-  { key: "discovery", label: "Descubrimiento", desc: "Se envía durante la fase de descubrimiento para generar confianza" },
-  { key: "value_pitch", label: "Propuesta de valor", desc: "Se envía cuando compartes valor o insights clave" },
-  { key: "link_offer", label: "Oferta de asesoría", desc: "Se envía junto con el link de asesorías" },
-  { key: "followup", label: "Follow-up", desc: "Se envía en el seguimiento después de enviar el link" },
-  { key: "closing", label: "Cierre", desc: "Se envía al cerrar la conversación positivamente" },
-  { key: "custom", label: "Personalizado", desc: "" },
+  { key: "greeting", label: "🎤 Saludo inicial", desc: "Se envía cuando el usuario manda su primer mensaje" },
+  { key: "discovery", label: "🔍 Descubrimiento", desc: "Se envía durante la fase de descubrimiento para generar confianza" },
+  { key: "value_pitch", label: "💡 Propuesta de valor", desc: "Se envía cuando compartes valor o insights clave" },
+  { key: "link_offer", label: "🔗 Oferta de asesoría", desc: "Se envía junto con el link de asesorías" },
+  { key: "followup", label: "🔄 Follow-up", desc: "Se envía en el seguimiento después de enviar el link" },
+  { key: "closing", label: "✅ Cierre", desc: "Se envía al cerrar la conversación positivamente" },
+  { key: "custom", label: "⚙️ Personalizado", desc: "" },
 ];
 
 export default function AudioSnippetsPage() {
@@ -90,7 +90,6 @@ export default function AudioSnippetsPage() {
           setRecordedAudio(base64);
         };
         reader.readAsDataURL(blob);
-
         stream.getTracks().forEach((t) => t.stop());
       };
 
@@ -146,7 +145,7 @@ export default function AudioSnippetsPage() {
     const preset = TRIGGER_PRESETS.find((p) => p.key === presetKey);
     if (preset && presetKey !== "custom") {
       setTriggerKey(presetKey);
-      setName(preset.label);
+      setName(preset.label.replace(/^[^\s]+\s/, "")); // Remove emoji
       setDescription(preset.desc);
     } else {
       setTriggerKey("");
@@ -226,61 +225,96 @@ export default function AudioSnippetsPage() {
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────────
+  const isFormVisible = showForm || (!loading && snippets.length === 0);
+
   return (
-    <div className="space-y-6">
+    <div style={{ maxWidth: 800, margin: "0 auto" }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
             🎙️ Audios Pre-grabados
           </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Grabá audios tuyos para que el agente los envíe en momentos clave de la conversación
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 4 }}>
+            Grabá audios tuyos para que el agente los envíe en momentos clave
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium"
-          style={{ background: "var(--brand)" }}
-        >
-          <Plus size={18} />
-          Nuevo Audio
-        </button>
+        {snippets.length > 0 && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              borderRadius: 10,
+              border: "none",
+              background: "#0ea5e9",
+              color: "white",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            <Plus size={18} />
+            Nuevo Audio
+          </button>
+        )}
       </div>
 
       {/* Create Form */}
       <AnimatePresence>
-        {showForm && (
+        {isFormVisible && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6 space-y-5"
+            style={{
+              borderRadius: 16,
+              border: "1px solid var(--border)",
+              background: "var(--bg-card)",
+              padding: 24,
+              marginBottom: 24,
+            }}
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                Grabar nuevo audio
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
+                {snippets.length === 0 ? "Grabá tu primer audio" : "Grabar nuevo audio"}
               </h2>
-              <button onClick={resetForm} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                <X size={20} />
-              </button>
+              {snippets.length > 0 && (
+                <button
+                  onClick={resetForm}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+                >
+                  <X size={20} />
+                </button>
+              )}
             </div>
 
-            {/* Preset selector */}
-            <div>
-              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-2">
-                ¿Cuándo debe enviarse este audio?
+            {/* Step 1: Preset selector */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)", display: "block", marginBottom: 10 }}>
+                Paso 1: ¿Cuándo debe enviarse este audio?
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
                 {TRIGGER_PRESETS.map((preset) => (
                   <button
                     key={preset.key}
                     onClick={() => handlePresetChange(preset.key)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                      selectedPreset === preset.key
-                        ? "border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]"
-                        : "border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--brand)]/50"
-                    }`}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      border: selectedPreset === preset.key
+                        ? "2px solid #0ea5e9"
+                        : "1px solid var(--border)",
+                      background: selectedPreset === preset.key ? "rgba(14,165,233,0.08)" : "transparent",
+                      color: selectedPreset === preset.key ? "#0ea5e9" : "var(--text-secondary)",
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      textAlign: "left",
+                    }}
                   >
                     {preset.label}
                   </button>
@@ -289,79 +323,145 @@ export default function AudioSnippetsPage() {
             </div>
 
             {selectedPreset && (
-              <>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                transition={{ duration: 0.2 }}
+              >
                 {/* Custom fields */}
                 {selectedPreset === "custom" && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                     <div>
-                      <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">
+                      <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
                         Nombre del audio
                       </label>
                       <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="ej: Motivación personal"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)]"
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                          border: "1px solid var(--border)",
+                          background: "var(--bg-base)",
+                          color: "var(--text-primary)",
+                          fontSize: 14,
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">
+                      <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
                         Trigger Key (identificador único)
                       </label>
                       <input
                         value={triggerKey}
                         onChange={(e) => setTriggerKey(e.target.value.replace(/[^a-z0-9_]/g, ""))}
                         placeholder="ej: motivation_pitch"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)]"
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                          border: "1px solid var(--border)",
+                          background: "var(--bg-base)",
+                          color: "var(--text-primary)",
+                          fontSize: 14,
+                        }}
                       />
                     </div>
                   </div>
                 )}
 
                 {/* Description */}
-                <div>
-                  <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">
-                    Descripción (cuándo se envía)
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
+                    Paso 2: Descripción (cuándo se envía)
                   </label>
                   <input
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe en qué momento de la conversación se envía este audio"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)]"
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
+                      background: "var(--bg-base)",
+                      color: "var(--text-primary)",
+                      fontSize: 14,
+                    }}
                   />
                 </div>
 
-                {/* Audio Recorder */}
-                <div>
-                  <label className="text-sm font-medium text-[var(--text-secondary)] block mb-2">
-                    Audio
+                {/* Step 3: Audio Recorder */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text-secondary)", display: "block", marginBottom: 10 }}>
+                    Paso 3: Grabá tu audio
                   </label>
 
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--bg-base)] border border-[var(--border)]">
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    padding: 20,
+                    borderRadius: 12,
+                    background: "var(--bg-base)",
+                    border: "1px solid var(--border)",
+                  }}>
                     {!recordedAudio ? (
                       <>
                         {!isRecording ? (
                           <button
                             onClick={startRecording}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium transition-all hover:scale-105"
-                            style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              padding: "12px 24px",
+                              borderRadius: 12,
+                              border: "none",
+                              background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                              color: "white",
+                              fontWeight: 600,
+                              fontSize: 14,
+                              cursor: "pointer",
+                            }}
                           >
                             <Mic size={18} />
                             Grabar Audio
                           </button>
                         ) : (
-                          <div className="flex items-center gap-4">
+                          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                             <button
                               onClick={stopRecording}
-                              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium animate-pulse"
-                              style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "12px 24px",
+                                borderRadius: 12,
+                                border: "none",
+                                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                                color: "white",
+                                fontWeight: 600,
+                                fontSize: 14,
+                                cursor: "pointer",
+                                animation: "pulse 2s infinite",
+                              }}
                             >
                               <Square size={16} />
                               Detener
                             </button>
-                            <div className="flex items-center gap-2 text-red-500">
-                              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                              <span className="font-mono text-sm">
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#ef4444" }}>
+                              <span style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#ef4444",
+                                animation: "pulse 1s infinite",
+                                display: "inline-block",
+                              }} />
+                              <span style={{ fontFamily: "monospace", fontSize: 14 }}>
                                 {formatDuration(recordingDuration)}
                               </span>
                             </div>
@@ -369,43 +469,52 @@ export default function AudioSnippetsPage() {
                         )}
 
                         {!isRecording && (
-                          <p className="text-sm text-[var(--text-secondary)]">
+                          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
                             Hacé click para comenzar a grabar tu audio
                           </p>
                         )}
                       </>
                     ) : (
-                      <div className="flex items-center gap-3 w-full">
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
                         <button
                           onClick={isPlaying ? stopPlaying : playRecording}
-                          className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
-                          style={{ background: "var(--brand)" }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            border: "none",
+                            background: "#0ea5e9",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
                         >
                           {isPlaying ? (
-                            <Pause size={18} className="text-white" />
+                            <Pause size={18} color="white" />
                           ) : (
-                            <Play size={18} className="text-white ml-0.5" />
+                            <Play size={18} color="white" style={{ marginLeft: 2 }} />
                           )}
                         </button>
 
-                        <div className="flex-1">
-                          <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+                        <div style={{ flex: 1 }}>
+                          <div style={{ height: 8, borderRadius: 4, background: "var(--border)", overflow: "hidden" }}>
                             <motion.div
-                              className="h-full rounded-full"
-                              style={{ background: "var(--brand)" }}
+                              style={{ height: "100%", borderRadius: 4, background: "#0ea5e9" }}
                               initial={{ width: 0 }}
                               animate={{ width: isPlaying ? "100%" : "0%" }}
                               transition={{ duration: recordingDuration, ease: "linear" }}
                             />
                           </div>
-                          <span className="text-xs text-[var(--text-secondary)] mt-1">
-                            {formatDuration(recordingDuration)}
+                          <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4, display: "block" }}>
+                            Duración: {formatDuration(recordingDuration)}
                           </span>
                         </div>
 
                         <button
                           onClick={clearRecording}
-                          className="text-red-500 hover:text-red-400 transition-colors"
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444" }}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -415,24 +524,46 @@ export default function AudioSnippetsPage() {
                 </div>
 
                 {/* Save button */}
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={resetForm}
-                    className="px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-base)]"
-                  >
-                    Cancelar
-                  </button>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                  {snippets.length > 0 && (
+                    <button
+                      onClick={resetForm}
+                      style={{
+                        padding: "10px 20px",
+                        borderRadius: 10,
+                        border: "1px solid var(--border)",
+                        background: "transparent",
+                        color: "var(--text-secondary)",
+                        fontSize: 14,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  )}
                   <button
                     onClick={handleSave}
                     disabled={saving || !recordedAudio || !name || !triggerKey}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium disabled:opacity-50"
-                    style={{ background: "var(--brand)" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 24px",
+                      borderRadius: 10,
+                      border: "none",
+                      background: saving || !recordedAudio || !name || !triggerKey ? "#94a3b8" : "#0ea5e9",
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: 14,
+                      cursor: saving || !recordedAudio || !name || !triggerKey ? "not-allowed" : "pointer",
+                      opacity: saving || !recordedAudio || !name || !triggerKey ? 0.5 : 1,
+                    }}
                   >
                     {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                     {saving ? "Guardando..." : "Guardar Audio"}
                   </button>
                 </div>
-              </>
+              </motion.div>
             )}
           </motion.div>
         )}
@@ -440,70 +571,79 @@ export default function AudioSnippetsPage() {
 
       {/* Snippets List */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 size={24} className="animate-spin text-[var(--text-secondary)]" />
+        <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
+          <Loader2 size={24} className="animate-spin" style={{ color: "var(--text-secondary)" }} />
         </div>
-      ) : snippets.length === 0 ? (
-        <div className="text-center py-16 space-y-3">
-          <Volume2 size={48} className="mx-auto text-[var(--text-secondary)] opacity-40" />
-          <p className="text-[var(--text-secondary)]">No hay audios pre-grabados aún</p>
-          <p className="text-sm text-[var(--text-secondary)] opacity-60">
-            Grabá tu primer audio para que el agente lo envíe automáticamente
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
+      ) : snippets.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {snippets.map((snippet) => (
             <motion.div
               key={snippet.id}
               layout
-              className={`rounded-xl border p-4 transition-all ${
-                snippet.active
-                  ? "border-[var(--border)] bg-[var(--bg-card)]"
-                  : "border-[var(--border)] bg-[var(--bg-card)] opacity-50"
-              }`}
+              style={{
+                borderRadius: 14,
+                border: "1px solid var(--border)",
+                background: "var(--bg-card)",
+                padding: 16,
+                opacity: snippet.active ? 1 : 0.5,
+                transition: "opacity 0.2s",
+              }}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ background: "var(--brand)", opacity: 0.15 }}
-                    >
-                      <Mic size={16} style={{ color: "var(--brand)" }} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-[var(--text-primary)]">{snippet.name}</h3>
-                      <p className="text-sm text-[var(--text-secondary)]">{snippet.description}</p>
-                    </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(14,165,233,0.1)",
+                  }}>
+                    <Mic size={16} color="#0ea5e9" />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
+                      {snippet.name}
+                    </h3>
+                    <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "2px 0 0" }}>
+                      {snippet.description}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono px-2 py-1 rounded bg-[var(--bg-base)] text-[var(--text-secondary)]">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{
+                    fontSize: 11,
+                    fontFamily: "monospace",
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    background: "var(--bg-base)",
+                    color: "var(--text-secondary)",
+                  }}>
                     {snippet.triggerKey}
                   </span>
 
-                  {snippet.audioDuration && (
-                    <span className="text-xs text-[var(--text-secondary)]">
+                  {snippet.audioDuration != null && (
+                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                       {formatDuration(snippet.audioDuration)}
                     </span>
                   )}
 
                   <button
                     onClick={() => toggleActive(snippet.id, snippet.active)}
-                    className="transition-colors"
+                    style={{ background: "none", border: "none", cursor: "pointer" }}
                   >
                     {snippet.active ? (
-                      <ToggleRight size={28} style={{ color: "var(--brand)" }} />
+                      <ToggleRight size={28} color="#0ea5e9" />
                     ) : (
-                      <ToggleLeft size={28} className="text-[var(--text-secondary)]" />
+                      <ToggleLeft size={28} color="var(--text-secondary)" />
                     )}
                   </button>
 
                   <button
                     onClick={() => handleDelete(snippet.id)}
-                    className="text-red-500/60 hover:text-red-500 transition-colors"
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", opacity: 0.6 }}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -512,7 +652,7 @@ export default function AudioSnippetsPage() {
             </motion.div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
