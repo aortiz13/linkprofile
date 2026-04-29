@@ -123,22 +123,21 @@ export function LeadGenForm({ profileId, title = "Contáctame" }: LeadGenFormPro
               }}
               placeholder="Teléfono"
               required
-              className={`w-full bg-[var(--bg-surface)] border rounded-[var(--radius-md)] px-4 pr-9 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors ${ 
-                waValidation.status === "valid" ? "border-emerald-500" :
-                waValidation.status === "invalid" ? "border-red-500" :
-                "border-[var(--border)] focus:border-[var(--border-hover)]"
-              }`}
+              className="w-full bg-[var(--bg-surface)] rounded-[var(--radius-md)] px-4 pr-9 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
+              style={{
+                border: `1px solid ${waValidation.status === "valid" ? "#10b981" : waValidation.status === "invalid" ? "#ef4444" : "var(--border)"}`,
+              }}
             />
             {/* Validation status indicator */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)" }}>
               {waValidation.status === "checking" && (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--text-muted)]" />
+                <Loader2 className="animate-spin" style={{ width: 14, height: 14, color: "var(--text-muted)" }} />
               )}
               {waValidation.status === "valid" && (
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                <CheckCircle style={{ width: 14, height: 14, color: "#10b981" }} />
               )}
               {waValidation.status === "invalid" && (
-                <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                <AlertCircle style={{ width: 14, height: 14, color: "#ef4444" }} />
               )}
             </div>
           </div>

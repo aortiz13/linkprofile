@@ -144,12 +144,13 @@ export function LeadMagnetBlock({
         background: "linear-gradient(135deg, rgba(var(--accent-rgb, 99,102,241), 0.12) 0%, rgba(var(--accent-rgb, 99,102,241), 0.04) 100%)",
       }}
     >
-      <div className="glass rounded-[var(--radius-lg)] p-8 text-center w-full border border-[var(--accent)]/20">
+      <div className="glass rounded-[var(--radius-lg)] p-8 text-center w-full" style={{ borderColor: "rgba(6,182,212,0.2)" }}>
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 12 }}
-          className="w-16 h-16 bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-4"
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{ background: "rgba(34, 197, 94, 0.15)" }}
         >
           <CheckCircle className="w-8 h-8 text-green-500" />
         </motion.div>
@@ -253,8 +254,8 @@ export function LeadMagnetBlock({
             {/* Decorative accent bar + icon */}
             <div className="flex items-start gap-3.5">
               <div className="relative shrink-0">
-                <div className="w-12 h-12 rounded-[var(--radius-md)] bg-[var(--accent)]/15 flex items-center justify-center">
-                  <Gift className="w-6 h-6 text-[var(--accent)]" />
+                <div className="w-12 h-12 rounded-[var(--radius-md)] flex items-center justify-center" style={{ background: "rgba(6, 182, 212, 0.15)" }}>
+                  <Gift className="w-6 h-6" style={{ color: "var(--accent)" }} />
                 </div>
                 {/* Pulsing dot */}
                 <motion.div
@@ -289,14 +290,14 @@ export function LeadMagnetBlock({
             name="name"
             placeholder="Tu nombre"
             required
-            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] transition-all text-sm"
           />
           <input
             type="email"
             name="email"
             placeholder="Tu email"
             required
-            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] transition-all text-sm"
           />
           <div className="relative">
             <input
@@ -315,22 +316,21 @@ export function LeadMagnetBlock({
               }}
               placeholder="WhatsApp (con código de país)"
               required
-              className={`w-full bg-[var(--bg-surface)] border rounded-[var(--radius-md)] px-4 pr-10 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all text-sm ${
-                waValidation.status === "valid" ? "border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" :
-                waValidation.status === "invalid" ? "border-red-500 focus:ring-2 focus:ring-red-500/20" :
-                "border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-              }`}
+              className="w-full bg-[var(--bg-surface)] rounded-[var(--radius-md)] px-4 pr-10 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all text-sm"
+              style={{
+                border: `1px solid ${waValidation.status === "valid" ? "#10b981" : waValidation.status === "invalid" ? "#ef4444" : "var(--border)"}`,
+              }}
             />
             {/* Validation status indicator */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)" }}>
               {waValidation.status === "checking" && (
-                <Loader2 className="w-4 h-4 animate-spin text-[var(--accent)]" />
+                <Loader2 className="animate-spin" style={{ width: 16, height: 16, color: "var(--accent)" }} />
               )}
               {waValidation.status === "valid" && (
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <CheckCircle style={{ width: 16, height: 16, color: "#10b981" }} />
               )}
               {waValidation.status === "invalid" && (
-                <AlertCircle className="w-4 h-4 text-red-500" />
+                <AlertCircle style={{ width: 16, height: 16, color: "#ef4444" }} />
               )}
             </div>
           </div>
@@ -416,8 +416,8 @@ export function LeadMagnetBlock({
             )}
           </motion.button>
 
-          <div className="flex items-center justify-center gap-1.5 text-[10px] text-[var(--text-muted)]/60 mt-1">
-            <Shield className="w-3 h-3" /> Tus datos están protegidos
+          <div className="flex items-center justify-center gap-1.5 text-[10px] mt-1" style={{ color: "var(--text-muted)", opacity: 0.6 }}>
+            <Shield style={{ width: 12, height: 12 }} /> Tus datos están protegidos
           </div>
         </form>
       </div>

@@ -179,7 +179,7 @@ export function AddBlockModal({ open, onClose, onAdd }: AddBlockModalProps) {
               <div className="flex-1 p-4 overflow-y-auto">
                 {/* Search */}
                 <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "var(--text-muted)" }} />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
