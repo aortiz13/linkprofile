@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Users, Mail, Phone, MessageSquare, Calendar, Globe, Tag, MessageCircle, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Users, Mail, Phone, MessageSquare, Calendar, Globe, Tag, CheckCircle2, XCircle, Clock, Bot } from "lucide-react";
 import { useState } from "react";
 
 interface Lead {
@@ -19,12 +19,52 @@ interface Lead {
   whatsappError: string | null;
   whatsappSentAt: string | null;
   createdAt: string;
+  waConversationId: string | null;
+  waAgentActive: boolean | null;
+  waStage: string | null;
 }
 
 export default function LeadsPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery<{ success: boolean; leads: Lead[] }>({
     queryKey: ["leads"],
     queryFn: () => fetch("/api/admin/leads").then((res) => res.json()),
+  });
+
+  const toggleAgent = useMutation({
+    mutationFn: async ({ conversationId, active }: { conversationId: string; active: boolean }) => {
+      const res = await fetch("/api/admin/leads/agent-toggle", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, active }),
+      });
+      return res.json();
+    },
+    onMutate: async ({ conversationId, active }) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["leads"] });
+      const previous = queryClient.getQueryData(["leads"]);
+      queryClient.setQueryData(["leads"], (old: { success: boolean; leads: Lead[] } | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          leads: old.leads.map((l) =>
+            l.waConversationId === conversationId
+              ? { ...l, waAgentActive: active, waStage: active ? "greeting" : "inactive" }
+              : l
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["leads"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    },
   });
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -105,6 +145,7 @@ export default function LeadsPage() {
                   <th className="px-6 py-4">Fuente</th>
                   <th className="px-6 py-4">Mensaje</th>
                   <th className="px-6 py-4">WA Auto</th>
+                  <th className="px-6 py-4">Agente</th>
                   <th className="px-6 py-4 rounded-tr-[var(--radius-lg)]">Fecha</th>
                 </tr>
               </thead>
@@ -196,6 +237,36 @@ export default function LeadsPage() {
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-500/10 text-red-500 cursor-help" title={lead.whatsappError || "Error desconocido"}>
                           <XCircle className="w-3 h-3" /> Error
                         </span>
+                      ) : (
+                        <span className="text-[10px] text-[var(--text-muted)] opacity-50">—</span>
+                      )}
+                    </td>
+                    {/* Agent toggle switch */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {lead.waConversationId ? (
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() =>
+                              toggleAgent.mutate({
+                                conversationId: lead.waConversationId!,
+                                active: !lead.waAgentActive,
+                              })
+                            }
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                              lead.waAgentActive
+                                ? "bg-emerald-500"
+                                : "bg-[var(--border)]"
+                            }`}
+                            title={lead.waAgentActive ? "Agente activo — click para desactivar" : "Agente inactivo — click para activar"}
+                          >
+                            <span
+                              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                                lead.waAgentActive ? "translate-x-[18px]" : "translate-x-[3px]"
+                              }`}
+                            />
+                          </button>
+                          <Bot className={`w-3.5 h-3.5 ${lead.waAgentActive ? "text-emerald-500" : "text-[var(--text-muted)] opacity-40"}`} />
+                        </div>
                       ) : (
                         <span className="text-[10px] text-[var(--text-muted)] opacity-50">—</span>
                       )}
