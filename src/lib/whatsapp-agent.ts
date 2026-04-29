@@ -184,7 +184,7 @@ export async function processIncomingMessage(
     console.log(`[WA Agent] ${cleanPhone} opted out. Checking for reactivation...`);
     // Check if user wants to reactivate
     const lower = messageText.toLowerCase();
-    if (lower.includes("quiero hablar") || lower.includes("quiero saber") || lower.includes("hola")) {
+    if (lower.includes("quiero hablar") || lower.includes("quiero saber")) {
       await db.update(waConversations)
         .set({ optedOut: false, active: true, noReplyFollowups: 0, updatedAt: new Date() })
         .where(eq(waConversations.id, conversation.id));
@@ -476,7 +476,7 @@ async function findConversation(phone: string) {
   const [conv] = await db
     .select()
     .from(waConversations)
-    .where(and(eq(waConversations.phone, phone), eq(waConversations.active, true)))
+    .where(eq(waConversations.phone, phone))
     .orderBy(desc(waConversations.createdAt))
     .limit(1);
   return conv || null;
