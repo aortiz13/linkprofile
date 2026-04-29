@@ -33,7 +33,7 @@ export default function LeadsPage() {
 
   const toggleAgent = useMutation({
     mutationFn: async ({ conversationId, active }: { conversationId: string; active: boolean }) => {
-      const res = await fetch("/api/admin/leads/agent-toggle", {
+      const res = await fetch("/api/admin/wa-agent-toggle", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId, active }),
