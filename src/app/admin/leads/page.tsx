@@ -38,6 +38,7 @@ export default function LeadsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId, active }),
       });
+      if (!res.ok) throw new Error(`Toggle failed: ${res.status}`);
       return res.json();
     },
     onMutate: async ({ conversationId, active }) => {
