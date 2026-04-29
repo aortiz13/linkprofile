@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Gift, Loader2, CheckCircle, Shield, Sparkles, Download, ArrowRight, X } from "lucide-react";
+import { Gift, Loader2, CheckCircle, Shield, Sparkles, Download, ArrowRight, X, AlertCircle } from "lucide-react";
+import { useWhatsAppValidation } from "@/lib/useWhatsAppValidation";
 
 interface LeadMagnetBlockProps {
   profileId: string;
@@ -32,6 +33,10 @@ export function LeadMagnetBlock({
   const [error, setError] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [phoneValue, setPhoneValue] = useState("");
+
+  // WhatsApp number validation
+  const waValidation = useWhatsAppValidation();
 
   const storageKey = `lm_dismissed_${magnetId || "default"}`;
 
@@ -67,6 +72,21 @@ export function LeadMagnetBlock({
     if (!accepted) {
       setError("Debes aceptar la política de privacidad");
       return;
+    }
+
+    // Block submit if WhatsApp validation failed
+    if (waValidation.isBlocked) {
+      setError("Debe ser un número válido para poder continuar");
+      return;
+    }
+
+    // If phone not yet validated, validate now
+    if (phoneValue && waValidation.status === "idle") {
+      const isValid = await waValidation.validate(phoneValue);
+      if (!isValid) {
+        setError("Debe ser un número válido para poder continuar");
+        return;
+      }
     }
 
     setLoading(true);
@@ -278,13 +298,55 @@ export function LeadMagnetBlock({
             required
             className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
           />
-          <input
-            type="tel"
-            name="phone"
-            placeholder="WhatsApp (con código de país)"
-            required
-            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[var(--radius-md)] px-4 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
-          />
+          <div className="relative">
+            <input
+              type="tel"
+              name="phone"
+              value={phoneValue}
+              onChange={(e) => {
+                setPhoneValue(e.target.value);
+                waValidation.reset();
+              }}
+              onBlur={() => {
+                const clean = phoneValue.replace(/[^0-9]/g, "");
+                if (clean.length >= 8) {
+                  waValidation.validate(phoneValue);
+                }
+              }}
+              placeholder="WhatsApp (con código de país)"
+              required
+              className={`w-full bg-[var(--bg-surface)] border rounded-[var(--radius-md)] px-4 pr-10 py-3 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all text-sm ${
+                waValidation.status === "valid" ? "border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" :
+                waValidation.status === "invalid" ? "border-red-500 focus:ring-2 focus:ring-red-500/20" :
+                "border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              }`}
+            />
+            {/* Validation status indicator */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {waValidation.status === "checking" && (
+                <Loader2 className="w-4 h-4 animate-spin text-[var(--accent)]" />
+              )}
+              {waValidation.status === "valid" && (
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+              )}
+              {waValidation.status === "invalid" && (
+                <AlertCircle className="w-4 h-4 text-red-500" />
+              )}
+            </div>
+          </div>
+          {/* WhatsApp validation error */}
+          <AnimatePresence>
+            {waValidation.errorMessage && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-xs text-red-500 font-medium -mt-1"
+              >
+                {waValidation.errorMessage}
+              </motion.p>
+            )}
+          </AnimatePresence>
 
           {/* Privacy policy checkbox */}
           <label className="flex items-start gap-2 cursor-pointer select-none mt-1">
@@ -328,7 +390,7 @@ export function LeadMagnetBlock({
           {/* CTA Button with glow */}
           <motion.button
             type="submit"
-            disabled={loading}
+            disabled={loading || waValidation.isBlocked || waValidation.status === "checking"}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="relative w-full font-semibold rounded-[var(--radius-md)] py-3.5 mt-1 flex items-center justify-center gap-2 disabled:opacity-70 transition-all text-sm overflow-hidden group"

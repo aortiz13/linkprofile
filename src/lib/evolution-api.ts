@@ -13,6 +13,59 @@ export interface WhatsAppMessageResult {
 }
 
 /**
+ * Check if a phone number is registered on WhatsApp.
+ * Uses Evolution API's /chat/whatsappNumbers endpoint.
+ * @param phone - Phone number in international format (e.g. "5491155551234")
+ * @returns true if the number exists on WhatsApp, false otherwise
+ */
+export async function checkWhatsAppNumber(phone: string): Promise<boolean> {
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+
+  if (!cleanPhone || cleanPhone.length < 8) {
+    return false;
+  }
+
+  try {
+    const url = `${EVOLUTION_API_URL}/chat/whatsappNumbers/${EVOLUTION_INSTANCE}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: EVOLUTION_API_KEY,
+      },
+      body: JSON.stringify({
+        numbers: [cleanPhone],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(
+        `[Evolution] whatsappNumbers error (${response.status}):`,
+        errorBody
+      );
+      // On API error, allow the number to pass (fail-open)
+      return true;
+    }
+
+    const result = await response.json();
+
+    // Response is an array of { exists, jid, number }
+    if (Array.isArray(result) && result.length > 0) {
+      return result[0].exists === true;
+    }
+
+    // If unexpected response shape, fail-open
+    return true;
+  } catch (error) {
+    console.error("[Evolution] whatsappNumbers fetch error:", error);
+    // On network error, allow the number to pass (fail-open)
+    return true;
+  }
+}
+
+/**
  * Replace template variables like {{nombre}}, {{email}}, {{whatsapp}}, {{ocupacion}}
  * with actual lead data.
  */
