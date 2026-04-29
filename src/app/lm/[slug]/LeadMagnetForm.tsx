@@ -330,6 +330,7 @@ export function LeadMagnetForm({
 
           {/* WhatsApp */}
           {showWhatsapp && (
+            <>
             <div className="flex gap-2">
               {/* Country code selector */}
               <div className="relative shrink-0">
@@ -431,6 +432,7 @@ export function LeadMagnetForm({
                 </motion.p>
               )}
             </AnimatePresence>
+            </>
           )}
 
           {/* Occupation dropdown */}
