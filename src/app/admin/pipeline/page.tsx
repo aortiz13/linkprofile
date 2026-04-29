@@ -52,13 +52,13 @@ interface LeadDetail {
 }
 
 const STAGES = [
-  { key: "lead", label: "Lead", icon: Users, color: "from-slate-500 to-slate-600", dot: "bg-slate-500" },
-  { key: "nutrido_bot", label: "Nutrido por Bot", icon: Bot, color: "from-blue-500 to-blue-600", dot: "bg-blue-500" },
-  { key: "asesor_humano", label: "Asesor Humano", icon: UserCheck, color: "from-purple-500 to-purple-600", dot: "bg-purple-500" },
-  { key: "reunion_agendada", label: "Reunión Agendada", icon: CalendarCheck, color: "from-amber-500 to-amber-600", dot: "bg-amber-500" },
-  { key: "seguimiento", label: "Seguimiento", icon: Clock, color: "from-cyan-500 to-cyan-600", dot: "bg-cyan-500" },
-  { key: "cierre_ganado", label: "Cierre Ganado", icon: Trophy, color: "from-emerald-500 to-emerald-600", dot: "bg-emerald-500" },
-  { key: "cierre_perdido", label: "Cierre Perdido", icon: XCircle, color: "from-red-500 to-red-600", dot: "bg-red-500" },
+  { key: "lead", label: "Lead", icon: Users, gradient: "linear-gradient(135deg, #64748b, #475569)", btnBg: "#64748b" },
+  { key: "nutrido_bot", label: "Nutrido por Bot", icon: Bot, gradient: "linear-gradient(135deg, #3b82f6, #2563eb)", btnBg: "#3b82f6" },
+  { key: "asesor_humano", label: "Asesor Humano", icon: UserCheck, gradient: "linear-gradient(135deg, #a855f7, #9333ea)", btnBg: "#a855f7" },
+  { key: "reunion_agendada", label: "Reunión Agendada", icon: CalendarCheck, gradient: "linear-gradient(135deg, #f59e0b, #d97706)", btnBg: "#f59e0b" },
+  { key: "seguimiento", label: "Seguimiento", icon: Clock, gradient: "linear-gradient(135deg, #06b6d4, #0891b2)", btnBg: "#06b6d4" },
+  { key: "cierre_ganado", label: "Cierre Ganado", icon: Trophy, gradient: "linear-gradient(135deg, #10b981, #059669)", btnBg: "#10b981" },
+  { key: "cierre_perdido", label: "Cierre Perdido", icon: XCircle, gradient: "linear-gradient(135deg, #ef4444, #dc2626)", btnBg: "#ef4444" },
 ];
 
 export default function PipelinePage() {
@@ -120,7 +120,7 @@ export default function PipelinePage() {
                 className="flex-shrink-0 w-[240px] flex flex-col bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl overflow-hidden"
               >
                 {/* Column header */}
-                <div className={`px-3 py-2.5 bg-gradient-to-r ${stage.color} text-white`}>
+                <div className="px-3 py-2.5 text-white" style={{ background: stage.gradient }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon className="w-4 h-4" />
@@ -245,9 +245,10 @@ export default function PipelinePage() {
                           onClick={() => moveStage.mutate({ leadId: detail.lead.id, stage: s.key })}
                           className={`px-2.5 py-1 text-[10px] font-medium rounded-full border transition-all ${
                             isCurrent
-                              ? `bg-gradient-to-r ${s.color} text-white border-transparent`
+                              ? "text-white border-transparent"
                               : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                           }`}
+                          style={isCurrent ? { background: s.gradient } : undefined}
                         >
                           {s.label}
                         </button>
