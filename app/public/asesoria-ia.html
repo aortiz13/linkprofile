@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Asesorías de IA 1 a 1 — Adrian Ortiz · Brandboost AI</title>
+<meta name="description" content="Sesiones 1 a 1 donde aplicás IA directamente a tu trabajo, negocio o día a día. Entrenamiento aplicado, no teoría.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root{
+    --white:#ffffff;
+    --gray-50:#f9fafb;
+    --gray-100:#f3f4f6;
+    --gray-200:#e5e7eb;
+    --gray-300:#d1d5db;
+    --gray-400:#9ca3af;
+    --gray-500:#6b7280;
+    --gray-600:#4b5563;
+    --gray-700:#374151;
+    --gray-800:#1f2937;
+    --gray-900:#111827;
+    --gray-950:#030712;
+    --black:#000000;
+    --cyan-50:#ecfeff;
+    --cyan-100:#cffafe;
+    --cyan-400:#22d3ee;
+    --cyan-500:#06b6d4;
+    --cyan-600:#0891b2;
+    --cyan-700:#0e7490;
+    --cyan-900:#164e63;
+    --success:#10b981;
+    --max:1200px;
+  }
+
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    background:var(--white);
+    color:var(--gray-900);
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .container{ max-width:var(--max); margin:0 auto; padding:0 40px; }
+  .container-narrow{ max-width:860px; margin:0 auto; padding:0 40px; }
+  @media (max-width:640px){
+    .container,.container-narrow{ padding:0 22px; }
+  }
+
+  /* shared mark (reused in hero + footer) */
+  .nav-mark{
+    width:28px; height:28px; border-radius:6px;
+    background:linear-gradient(135deg,#1f2937,#000);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1);
+    flex-shrink:0;
+  }
+  .nav-mark::after{
+    content:""; width:10px; height:10px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #e5e7eb, #6b7280 60%, #1f2937);
+  }
+
+  /* ══════════ MODALIDADES ══════════ */
+  .modalidades{ background:var(--white); }
+  .mod-head{ max-width:720px; margin-bottom:56px; }
+  .mod-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:900px){ .mod-grid{ grid-template-columns:1fr; } }
+  .mod-card{
+    position:relative; padding:44px 40px 40px;
+    border:1px solid var(--gray-200); border-radius:16px;
+    background:var(--white); transition:all .3s ease;
+    display:flex; flex-direction:column;
+  }
+  .mod-card:hover{
+    border-color:var(--gray-900);
+    transform:translateY(-2px);
+    box-shadow:0 12px 40px rgba(0,0,0,.06);
+  }
+  .mod-card.dark{ background:var(--black); color:var(--white); border-color:var(--black); }
+  .mod-card.dark:hover{ box-shadow:0 12px 40px rgba(6,182,212,.15); }
+  @media (max-width:640px){ .mod-card{ padding:32px 26px; } }
+  .mod-tag{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:10.5px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--cyan-600); margin-bottom:20px;
+  }
+  .mod-tag::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--cyan-500); }
+  .mod-card.dark .mod-tag{ color:var(--cyan-400); }
+  .mod-card.dark .mod-tag::before{ background:var(--cyan-400); }
+  .mod-title{
+    font-size:1.8rem; font-weight:700; letter-spacing:-0.028em;
+    line-height:1.1; margin-bottom:14px; color:inherit;
+  }
+  .mod-sub{
+    font-size:15px; font-weight:300; line-height:1.6;
+    color:var(--gray-600); margin-bottom:28px;
+  }
+  .mod-card.dark .mod-sub{ color:var(--gray-400); }
+  .mod-features{
+    list-style:none; margin:0 0 32px 0;
+    display:flex; flex-direction:column; gap:12px;
+    padding-top:24px; border-top:1px solid var(--gray-200); flex:1;
+  }
+  .mod-card.dark .mod-features{ border-top-color:rgba(255,255,255,.12); }
+  .mod-features li{
+    display:flex; align-items:flex-start; gap:12px;
+    font-size:14px; color:var(--gray-700); line-height:1.5;
+  }
+  .mod-card.dark .mod-features li{ color:var(--gray-300); }
+  .mod-features li svg{
+    width:14px; height:14px; flex-shrink:0; margin-top:4px;
+    color:var(--cyan-600); stroke-width:2.5;
+  }
+  .mod-card.dark .mod-features li svg{ color:var(--cyan-400); }
+  .mod-features li strong{ color:var(--gray-900); font-weight:600; }
+  .mod-card.dark .mod-features li strong{ color:var(--white); }
+  .mod-card .btn{ width:100%; }
+  .mod-card.dark .btn-primary{ background:var(--white); color:var(--black); }
+  .mod-card.dark .btn-primary:hover{ background:var(--cyan-400); }
+
+  /* ══════════ TOOLS ══════════ */
+  .tools{ background:var(--gray-50); border-top:1px solid var(--gray-200); border-bottom:1px solid var(--gray-200); }
+  .tools-head{
+    display:flex; justify-content:space-between; align-items:end;
+    gap:32px; flex-wrap:wrap; margin-bottom:56px;
+  }
+  .tools-head > div:first-child{ max-width:560px; }
+  .tools-count{
+    font-size:10.5px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--gray-400); text-align:right;
+  }
+  .tools-count strong{
+    display:block; font-size:2.5rem; font-weight:700;
+    letter-spacing:-0.03em; color:var(--gray-900); line-height:1; margin-top:6px;
+  }
+  .tool-group{ margin-bottom:40px; }
+  .tool-group:last-child{ margin-bottom:0; }
+  .tool-group-label{
+    font-size:10.5px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--gray-500);
+    display:flex; align-items:center; gap:14px; margin-bottom:18px;
+  }
+  .tool-group-label::after{ content:""; flex:1; height:1px; background:var(--gray-200); }
+  .tool-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:1px;
+    background:var(--gray-200);
+    border:1px solid var(--gray-200);
+    border-radius:10px; overflow:hidden;
+  }
+  .tool-item{
+    background:var(--white); padding:16px 18px;
+    display:flex; align-items:center; gap:14px;
+    transition:background .2s ease; min-height:68px;
+  }
+  .tool-item:hover{ background:var(--cyan-50); }
+  .tool-logo{
+    width:38px; height:38px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    background:var(--white);
+    border:1px solid var(--gray-200);
+    overflow:hidden;
+  }
+  .tool-logo img{
+    width:22px; height:22px; object-fit:contain;
+    display:block;
+  }
+  .tool-logo.filled{
+    border:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 1px 2px rgba(0,0,0,.08);
+  }
+  .tool-logo.filled img{ filter:brightness(0) invert(1); }
+  .tool-name{
+    font-size:13.5px; font-weight:600; color:var(--gray-900);
+    letter-spacing:-0.01em; line-height:1.2;
+  }
+  .tool-cat{
+    font-size:10px; color:var(--gray-400); font-weight:500;
+    letter-spacing:.08em; text-transform:uppercase; margin-top:3px;
+  }
+
+  /* ══════════ CUPOS ══════════ */
+  .cupos{ background:var(--white); }
+  .cupos-card{
+    border:1px solid var(--gray-200); border-radius:16px;
+    padding:56px; display:grid; grid-template-columns:minmax(0,1fr) auto;
+    gap:48px; align-items:center;
+    position:relative; overflow:hidden;
+  }
+  .cupos-card::before{
+    content:""; position:absolute; top:0; right:0; width:360px; height:360px;
+    background:radial-gradient(circle at 70% 30%, rgba(6,182,212,0.08), transparent 60%);
+    pointer-events:none;
+  }
+  @media (max-width:900px){ .cupos-card{ grid-template-columns:1fr; padding:40px 32px; gap:32px; } }
+  @media (max-width:640px){ .cupos-card{ padding:32px 24px; } }
+  .cupos-content{ position:relative; z-index:2; }
+  .cupos-content h2{ font-size:clamp(1.6rem, 2.5vw, 2.2rem); margin-bottom:16px; }
+  .cupos-content p{
+    font-size:15.5px; color:var(--gray-600); line-height:1.65;
+    font-weight:300; max-width:540px;
+  }
+  .cupos-content p strong{ color:var(--gray-900); font-weight:600; }
+  .cupos-visual{
+    position:relative; z-index:2; text-align:center;
+    padding:28px 36px; border:1px solid var(--gray-200);
+    border-radius:12px; background:var(--white); min-width:220px;
+  }
+  .cupos-big{
+    font-size:4rem; font-weight:700; letter-spacing:-0.04em;
+    color:var(--gray-900); line-height:1;
+    display:flex; align-items:baseline; justify-content:center; gap:4px;
+  }
+  .cupos-big span{ font-size:1.25rem; font-weight:500; color:var(--gray-400); }
+  .cupos-label{
+    margin-top:10px; font-size:10.5px; font-weight:700;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--gray-500);
+  }
+  .cupos-status{
+    margin-top:16px; padding-top:16px;
+    border-top:1px solid var(--gray-200);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-size:11px; letter-spacing:.15em; text-transform:uppercase;
+    font-weight:700; color:var(--cyan-700);
+  }
+  .cupos-status .status-dot{ background:var(--cyan-500); box-shadow:0 0 0 3px rgba(6,182,212,0.18); }
+
+  /* ──────── SHARED ──────── */
+  section{ padding:120px 0; position:relative; }
+  @media (max-width:768px){ section{ padding:80px 0; } }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:10px;
+    font-size:11px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--cyan-600);
+    margin-bottom:20px;
+  }
+  .eyebrow::before{
+    content:""; width:24px; height:1px; background:var(--cyan-500);
+  }
+  .eyebrow.centered{ justify-content:center; }
+
+  h1,h2,h3{ color:var(--gray-900); }
+  h1{
+    font-size:clamp(2.5rem, 6.2vw, 5.5rem);
+    font-weight:700; letter-spacing:-0.035em; line-height:1.02;
+  }
+  h2{
+    font-size:clamp(1.9rem, 3.8vw, 3rem);
+    font-weight:700; letter-spacing:-0.028em; line-height:1.08;
+  }
+  h3{
+    font-size:1.05rem; font-weight:600; letter-spacing:-0.01em;
+  }
+  .accent{ color:var(--cyan-600); }
+  .lead{
+    font-size:clamp(1.05rem, 1.5vw, 1.2rem);
+    font-weight:300; color:var(--gray-600); line-height:1.6;
+  }
+
+  /* ──────── BUTTONS ──────── */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    gap:10px; padding:16px 28px; font-size:14px; font-weight:600;
+    text-decoration:none; border:none; cursor:pointer;
+    transition:all .25s ease; border-radius:8px; min-height:50px;
+    letter-spacing:-0.005em;
+  }
+  .btn-primary{ background:var(--black); color:var(--white); }
+  .btn-primary:hover{ background:var(--gray-800); }
+  .btn-ghost{
+    background:transparent; color:var(--gray-900);
+    border:1px solid var(--gray-300);
+  }
+  .btn-ghost:hover{ border-color:var(--gray-900); background:var(--gray-50); }
+  .btn svg{ width:14px; height:14px; transition:transform .25s; }
+  .btn:hover svg{ transform:translateX(3px); }
+
+  /* ══════════ HERO ══════════ */
+  .hero{
+    min-height:100vh;
+    padding:80px 0 100px;
+    display:flex; align-items:center;
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(6,182,212,0.06), transparent 55%),
+      radial-gradient(circle at 50% 100%, rgba(6,182,212,0.03), transparent 50%);
+    pointer-events:none;
+  }
+  /* subtle grid */
+  .hero::after{
+    content:""; position:absolute; inset:0;
+    background-image:
+      linear-gradient(to right, rgba(17,24,39,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(17,24,39,0.04) 1px, transparent 1px);
+    background-size:80px 80px;
+    mask-image:radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse at center, black 30%, transparent 75%);
+    pointer-events:none;
+  }
+
+  .hero-inner{ position:relative; z-index:2; width:100%; }
+
+  .hero-topline{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:56px; flex-wrap:wrap; gap:16px;
+  }
+  .hero-status{
+    display:inline-flex; align-items:center; gap:10px;
+    font-size:11px; font-weight:700; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--gray-500);
+  }
+  .status-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--success);
+    box-shadow:0 0 0 3px rgba(16,185,129,0.18);
+    animation:pulse 2.4s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(16,185,129,0.18); }
+    50%{ box-shadow:0 0 0 6px rgba(16,185,129,0.08); }
+  }
+  .hero-meta{
+    font-size:11px; font-weight:600; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--gray-400);
+  }
+
+  .hero h1{
+    max-width:1000px;
+  }
+  .hero h1 .line{ display:block; }
+  .hero h1 .muted{
+    color:var(--gray-400); font-weight:300;
+  }
+
+  .hero-sub{
+    max-width:640px; margin-top:32px;
+    font-size:clamp(1.05rem, 1.5vw, 1.25rem);
+    color:var(--gray-600); font-weight:300; line-height:1.6;
+  }
+
+  .hero-actions{
+    display:flex; align-items:center; gap:16px;
+    margin-top:48px; flex-wrap:wrap;
+  }
+
+  .hero-meta-row{
+    margin-top:80px;
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:1px; background:var(--gray-200);
+    border-top:1px solid var(--gray-200);
+    border-bottom:1px solid var(--gray-200);
+  }
+  .hero-meta-row > div{
+    background:var(--white); padding:28px 24px 28px 0;
+  }
+  .meta-k{
+    font-size:10.5px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--gray-400); margin-bottom:10px;
+  }
+  .meta-v{
+    font-size:15px; color:var(--gray-900); font-weight:500; letter-spacing:-0.01em;
+  }
+  @media (max-width:768px){
+    .hero-meta-row{ grid-template-columns:1fr; }
+    .hero-meta-row > div{ padding:20px 0; }
+    .hero-topline{ display:none; }
+    .hero-brand-row{ display:none; }
+  }
+
+  /* ══════════ PROBLEM ══════════ */
+  .problem{ background:var(--gray-50); border-top:1px solid var(--gray-200); border-bottom:1px solid var(--gray-200); }
+  .problem-grid{
+    display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1fr);
+    gap:80px; align-items:start;
+  }
+  @media (max-width:900px){ .problem-grid{ grid-template-columns:1fr; gap:48px; } }
+
+  .problem-list{
+    list-style:none; display:flex; flex-direction:column;
+    border-top:1px solid var(--gray-200);
+  }
+  .problem-list li{
+    display:grid; grid-template-columns:48px 1fr; gap:20px;
+    padding:22px 0; border-bottom:1px solid var(--gray-200);
+    font-size:15.5px; color:var(--gray-700); line-height:1.5;
+    align-items:start;
+  }
+  .problem-list .idx{
+    font-size:11px; font-weight:700; color:var(--gray-400);
+    letter-spacing:.15em; padding-top:2px;
+  }
+  .problem-list strong{ color:var(--gray-900); font-weight:600; }
+
+  /* ══════════ SESSIONS (qué incluye) ══════════ */
+  .sessions{ padding-bottom:0; }
+  .sessions-head{ max-width:720px; margin-bottom:64px; }
+  .session-grid{
+    display:grid; grid-template-columns:repeat(3,1fr);
+    border:1px solid var(--gray-200); border-right:none; border-bottom:none;
+  }
+  @media (max-width:900px){ .session-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:560px){ .session-grid{ grid-template-columns:1fr; } }
+
+  .session-card{
+    padding:36px 32px; border-right:1px solid var(--gray-200); border-bottom:1px solid var(--gray-200);
+    background:var(--white); transition:background .3s ease;
+    position:relative; min-height:220px;
+  }
+  .session-card:hover{ background:var(--gray-50); }
+  .session-card:hover .session-icon{ border-color:var(--cyan-500); color:var(--cyan-600); }
+  .session-icon{
+    width:42px; height:42px; border-radius:8px;
+    border:1px solid var(--gray-300);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:22px; color:var(--gray-600);
+    transition:all .3s ease;
+  }
+  .session-icon svg{ width:20px; height:20px; stroke-width:1.5; }
+  .session-num{
+    position:absolute; top:20px; right:24px;
+    font-size:10.5px; font-weight:700; letter-spacing:.15em;
+    color:var(--gray-300);
+  }
+  .session-title{
+    font-size:16px; font-weight:600; color:var(--gray-900);
+    margin-bottom:10px; letter-spacing:-0.01em;
+  }
+  .session-desc{
+    font-size:14px; color:var(--gray-500); line-height:1.55;
+  }
+
+  /* ══════════ DIFFERENTIAL ══════════ */
+  .diff{ background:var(--black); color:var(--white); overflow:hidden; position:relative; }
+  .diff .eyebrow{ color:var(--cyan-400); }
+  .diff .eyebrow::before{ background:var(--cyan-400); }
+  .diff h2{ color:var(--white); }
+  .diff h2 .accent{ color:var(--cyan-400); }
+  .diff-lead{
+    max-width:640px; margin-top:24px; color:var(--gray-400);
+    font-size:1.1rem; font-weight:300; line-height:1.65;
+  }
+  .diff-lead strong{ color:var(--white); font-weight:500; }
+
+  .diff-grid{
+    margin-top:72px;
+    display:grid; grid-template-columns:repeat(3,1fr);
+    border-top:1px solid rgba(255,255,255,.12);
+  }
+  @media (max-width:900px){ .diff-grid{ grid-template-columns:1fr; } }
+
+  .diff-item{
+    padding:44px 36px 48px;
+    border-right:1px solid rgba(255,255,255,.12);
+    border-bottom:1px solid rgba(255,255,255,.12);
+    position:relative;
+  }
+  .diff-item:last-child{ border-right:none; }
+  @media (max-width:900px){ .diff-item{ border-right:none; } }
+  .diff-num{
+    font-size:11px; font-weight:700; letter-spacing:.2em;
+    color:var(--cyan-400); margin-bottom:28px;
+  }
+  .diff-title{
+    font-size:1.35rem; font-weight:600; margin-bottom:14px;
+    letter-spacing:-0.02em; line-height:1.2;
+  }
+  .diff-desc{
+    font-size:14.5px; color:var(--gray-400); line-height:1.6;
+  }
+
+  .diff-signature{
+    margin-top:0; padding:48px 36px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+    display:flex; justify-content:space-between; align-items:center;
+    gap:24px; flex-wrap:wrap;
+  }
+  .diff-signature-text{
+    font-size:1.15rem; font-weight:300; color:var(--gray-300);
+    letter-spacing:-0.01em; max-width:600px;
+  }
+  .diff-signature-text em{
+    font-style:normal; color:var(--white); font-weight:500;
+  }
+
+  /* ══════════ RESULTS ══════════ */
+  .results{ background:var(--white); }
+  .results-grid{
+    margin-top:64px;
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:0;
+    border:1px solid var(--gray-200);
+    border-right:none;
+  }
+  @media (max-width:900px){ .results-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:560px){ .results-grid{ grid-template-columns:1fr; border-right:1px solid var(--gray-200); } }
+
+  .result-card{
+    padding:36px 28px; border-right:1px solid var(--gray-200);
+    background:var(--white); transition:background .3s;
+  }
+  .result-card:hover{ background:var(--gray-50); }
+  .result-icon{
+    width:36px; height:36px; border-radius:6px;
+    background:var(--cyan-50); border:1px solid var(--cyan-100);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:24px; color:var(--cyan-600);
+  }
+  .result-icon svg{ width:18px; height:18px; stroke-width:1.5; }
+  .result-title{
+    font-size:15px; font-weight:600; color:var(--gray-900);
+    margin-bottom:8px; letter-spacing:-0.01em;
+  }
+  .result-desc{
+    font-size:13.5px; color:var(--gray-500); line-height:1.55;
+  }
+
+  /* ══════════ PROCESS (how it works) ══════════ */
+  .process{ background:var(--gray-50); border-top:1px solid var(--gray-200); border-bottom:1px solid var(--gray-200); }
+  .process-steps{
+    margin-top:64px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+    position:relative;
+  }
+  @media (max-width:900px){ .process-steps{ grid-template-columns:1fr; } }
+
+  .step{
+    padding:32px 28px 36px; background:var(--white);
+    border:1px solid var(--gray-200);
+    border-left:none; position:relative;
+  }
+  .step:first-child{ border-left:1px solid var(--gray-200); }
+  @media (max-width:900px){
+    .step{ border-left:1px solid var(--gray-200); border-top:none; }
+    .step:first-child{ border-top:1px solid var(--gray-200); }
+  }
+  .step-num{
+    display:inline-block; font-size:10.5px; font-weight:700;
+    letter-spacing:.2em; color:var(--gray-400);
+    margin-bottom:28px;
+  }
+  .step-num::before{
+    content:""; display:inline-block; width:18px; height:1px;
+    background:var(--cyan-500); vertical-align:middle;
+    margin-right:10px;
+  }
+  .step-title{
+    font-size:16px; font-weight:600; color:var(--gray-900);
+    margin-bottom:10px; letter-spacing:-0.01em;
+  }
+  .step-desc{
+    font-size:13.5px; color:var(--gray-500); line-height:1.55;
+  }
+
+  /* ══════════ ABOUT ══════════ */
+  .about{ background:var(--white); }
+  .about-grid{
+    display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1fr);
+    gap:80px; align-items:start;
+  }
+  @media (max-width:900px){ .about-grid{ grid-template-columns:1fr; gap:48px; } }
+
+  .about-photo{
+    position:relative; aspect-ratio:4/5;
+    background:var(--gray-100); border-radius:4px; overflow:hidden;
+  }
+  .about-photo img{
+    width:100%; height:100%; object-fit:cover;
+    filter:grayscale(0.4) contrast(1.05);
+    transition:filter .6s ease;
+  }
+  .about-photo:hover img{ filter:grayscale(0) contrast(1); }
+  .about-photo-meta{
+    position:absolute; bottom:0; left:0; right:0;
+    padding:20px 24px;
+    background:linear-gradient(to top, rgba(0,0,0,.75), transparent);
+    color:var(--white);
+    display:flex; justify-content:space-between; align-items:end;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    font-weight:600;
+  }
+  .about-photo-meta span:last-child{ color:var(--cyan-400); }
+
+  .about-text p{
+    font-size:16px; color:var(--gray-600); line-height:1.7;
+    margin-bottom:18px; font-weight:300;
+  }
+  .about-text p strong{ color:var(--gray-900); font-weight:600; }
+  .about-quote{
+    margin-top:28px; padding:20px 0 0;
+    border-top:1px solid var(--gray-200);
+    font-size:16px; color:var(--gray-900); font-weight:500;
+    letter-spacing:-0.01em;
+  }
+  .about-quote::before{
+    content:""; display:block; width:28px; height:2px;
+    background:var(--cyan-500); margin-bottom:16px;
+  }
+  .about-chips{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:28px;
+    list-style:none;
+  }
+  .about-chips li{
+    font-size:12px; font-weight:500; color:var(--gray-700);
+    padding:8px 14px; border:1px solid var(--gray-200);
+    border-radius:100px;
+    background:var(--white);
+  }
+
+  /* ══════════ FAQ ══════════ */
+  .faq{ background:var(--gray-50); border-top:1px solid var(--gray-200); border-bottom:1px solid var(--gray-200); }
+  .faq-list{ margin-top:48px; border-top:1px solid var(--gray-200); }
+  .faq-item{
+    border-bottom:1px solid var(--gray-200);
+    transition:background .2s;
+  }
+  .faq-item summary{
+    list-style:none; cursor:pointer;
+    padding:26px 0; display:flex; align-items:center; justify-content:space-between;
+    gap:24px;
+    font-size:16px; font-weight:500; color:var(--gray-900);
+    letter-spacing:-0.01em;
+  }
+  .faq-item summary::-webkit-details-marker{ display:none; }
+  .faq-item summary .plus{
+    width:20px; height:20px; flex-shrink:0;
+    position:relative; color:var(--gray-400);
+    transition:color .2s, transform .3s ease;
+  }
+  .faq-item summary .plus::before,
+  .faq-item summary .plus::after{
+    content:""; position:absolute; background:currentColor;
+    transition:transform .3s ease;
+  }
+  .faq-item summary .plus::before{
+    left:0; right:0; top:50%; height:1.5px; margin-top:-0.75px;
+  }
+  .faq-item summary .plus::after{
+    top:0; bottom:0; left:50%; width:1.5px; margin-left:-0.75px;
+  }
+  .faq-item[open] summary .plus{ color:var(--cyan-600); }
+  .faq-item[open] summary .plus::after{ transform:scaleY(0); }
+  .faq-item summary:hover{ color:var(--cyan-700); }
+  .faq-answer{
+    padding:0 0 28px 0;
+    font-size:15px; color:var(--gray-600); line-height:1.65;
+    max-width:780px;
+  }
+  .faq-answer strong{ color:var(--gray-900); font-weight:600; }
+
+  /* ══════════ CONTACT (form) ══════════ */
+  .contact{ background:var(--black); color:var(--white); position:relative; overflow:hidden; }
+  .contact::before{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 600px 400px at 85% 20%, rgba(6,182,212,0.08), transparent 60%),
+      radial-gradient(ellipse 500px 300px at 10% 90%, rgba(139,92,246,0.05), transparent 60%);
+    pointer-events:none;
+  }
+  .contact .container{ position:relative; z-index:2; }
+
+  .contact-grid{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);
+    gap:80px; align-items:start;
+  }
+  @media (max-width:900px){ .contact-grid{ grid-template-columns:1fr; gap:56px; } }
+
+  .contact-head .eyebrow{ color:var(--cyan-400); }
+  .contact-head .eyebrow::before{ background:var(--cyan-400); }
+  .contact h2{ color:var(--white); }
+  .contact h2 .accent{ color:var(--cyan-400); }
+  .contact-sub{
+    margin-top:24px; color:var(--gray-400);
+    font-size:1.05rem; font-weight:300; line-height:1.65; max-width:480px;
+  }
+
+  .contact-info{
+    margin-top:48px; display:flex; flex-direction:column; gap:18px;
+    padding-top:32px; border-top:1px solid rgba(255,255,255,.12);
+  }
+  .contact-info-item{
+    display:flex; align-items:center; gap:14px;
+    font-size:13px; color:var(--gray-400);
+  }
+  .contact-info-item strong{
+    color:var(--white); font-weight:500;
+    letter-spacing:.02em;
+  }
+  .contact-info-icon{
+    width:32px; height:32px; border-radius:6px;
+    border:1px solid rgba(255,255,255,.16);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--cyan-400);
+  }
+  .contact-info-icon svg{ width:14px; height:14px; stroke-width:1.5; }
+  .contact-info-item small{
+    display:block; font-size:10.5px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--gray-500); margin-bottom:2px;
+    font-weight:600;
+  }
+
+  .form-card{
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px;
+    padding:40px;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  @media (max-width:640px){ .form-card{ padding:28px 22px; } }
+
+  .form-title{
+    font-size:14px; font-weight:600; color:var(--white);
+    margin-bottom:6px; letter-spacing:-0.01em;
+  }
+  .form-hint{
+    font-size:12.5px; color:var(--gray-500);
+    margin-bottom:28px;
+  }
+
+  .form-row{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    margin-bottom:14px;
+  }
+  @media (max-width:560px){ .form-row{ grid-template-columns:1fr; } }
+  .form-field{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .form-field label{
+    font-size:10.5px; font-weight:700; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--gray-500);
+  }
+  .form-field label .req{ color:var(--cyan-400); }
+  .form-field input,
+  .form-field textarea,
+  .form-field select{
+    width:100%;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1);
+    color:var(--white);
+    padding:14px 16px;
+    font-family:inherit;
+    font-size:14px;
+    border-radius:8px;
+    transition:all .2s ease;
+    outline:none;
+  }
+  .form-field textarea{ resize:vertical; min-height:110px; }
+  .form-field input::placeholder,
+  .form-field textarea::placeholder{ color:var(--gray-600); }
+  .form-field input:hover,
+  .form-field textarea:hover,
+  .form-field select:hover{ border-color:rgba(255,255,255,0.2); }
+  .form-field input:focus,
+  .form-field textarea:focus,
+  .form-field select:focus{
+    border-color:var(--cyan-500);
+    background:rgba(6,182,212,0.05);
+    box-shadow:0 0 0 4px rgba(6,182,212,0.1);
+  }
+  .form-field select{
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 16px center;
+    padding-right:40px; cursor:pointer;
+  }
+  .form-field select option{ background:var(--gray-900); color:var(--white); }
+
+  /* Custom dropdown */
+  .cdd{ position:relative; }
+  .cdd-btn{
+    width:100%;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;
+    padding:13px 40px 13px 14px;
+    color:var(--white);
+    font-family:inherit; font-size:14px;
+    text-align:left; cursor:pointer;
+    display:flex; align-items:center; gap:10px;
+    transition:border-color .2s, background .2s, box-shadow .2s;
+    position:relative;
+  }
+  .cdd-btn:hover{ border-color:rgba(255,255,255,0.2); }
+  .cdd-btn.open, .cdd-btn:focus{
+    border-color:var(--cyan-500);
+    background:rgba(6,182,212,0.05);
+    box-shadow:0 0 0 4px rgba(6,182,212,0.1);
+    outline:none;
+  }
+  .cdd-btn .cdd-placeholder{ color:var(--gray-600); }
+  .cdd-btn::after{
+    content:''; position:absolute; right:14px; top:50%;
+    width:10px; height:10px; margin-top:-6px;
+    border-right:2px solid var(--gray-400);
+    border-bottom:2px solid var(--gray-400);
+    transform:rotate(45deg); transition:transform .2s;
+  }
+  .cdd-btn.open::after{ transform:rotate(-135deg); margin-top:-2px; }
+  .cdd-menu{
+    position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:#0a0a0a;
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px;
+    max-height:260px; overflow-y:auto;
+    z-index:100;
+    opacity:0; transform:translateY(-4px); pointer-events:none;
+    transition:opacity .15s, transform .15s;
+    box-shadow:0 20px 40px -10px rgba(0,0,0,.6);
+  }
+  .cdd-menu.open{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .cdd-search{
+    padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .cdd-search input{
+    width:100%; background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:6px; padding:8px 10px;
+    color:var(--white); font-family:inherit; font-size:13px;
+  }
+  .cdd-search input:focus{ outline:none; border-color:var(--cyan-500); }
+  .cdd-opt{
+    padding:10px 14px; cursor:pointer; color:var(--gray-300);
+    font-size:13.5px;
+    display:flex; align-items:center; gap:10px;
+    transition:background .12s, color .12s;
+  }
+  .cdd-opt:hover, .cdd-opt.active{ background:rgba(6,182,212,0.08); color:var(--white); }
+  .cdd-opt.selected{ color:var(--cyan-400); }
+  .cdd-opt .flag{ font-size:16px; }
+  .cdd-opt .dial{ color:var(--gray-500); font-variant-numeric:tabular-nums; margin-left:auto; font-size:12.5px; }
+  .cdd-btn .flag{ font-size:16px; }
+  .cdd-btn .dial{ color:var(--gray-400); font-variant-numeric:tabular-nums; }
+  .cdd-empty{ padding:20px 14px; color:var(--gray-600); font-size:13px; text-align:center; }
+
+  /* Phone composite */
+  .phone-group{
+    display:grid; grid-template-columns:135px 1fr; gap:8px;
+  }
+  .phone-group .cdd-btn{ padding-left:12px; padding-right:30px; }
+  .phone-group input[type="tel"]{ width:100%; }
+
+  .form-check{
+    display:flex; align-items:flex-start; gap:10px; margin:20px 0 24px;
+    font-size:12px; color:var(--gray-500); line-height:1.5;
+  }
+  .form-check input{
+    margin-top:3px; accent-color:var(--cyan-500);
+    width:14px; height:14px;
+  }
+
+  .form-submit{
+    width:100%;
+    background:var(--white); color:var(--black);
+    border:none; padding:16px 24px;
+    font-family:inherit; font-size:14px; font-weight:600;
+    border-radius:8px; cursor:pointer;
+    transition:all .25s ease;
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    letter-spacing:-0.005em;
+  }
+  .form-submit:hover{ background:var(--cyan-400); }
+  .form-submit svg{ width:14px; height:14px; transition:transform .25s; }
+  .form-submit:hover svg{ transform:translateX(3px); }
+
+  .form-success{
+    display:none; text-align:center; padding:40px 20px;
+  }
+  .form-success.active{ display:block; }
+  .form-success-icon{
+    width:56px; height:56px; border-radius:50%;
+    background:rgba(6,182,212,0.1); border:1px solid var(--cyan-500);
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 20px; color:var(--cyan-400);
+  }
+  .form-success-icon svg{ width:24px; height:24px; stroke-width:2; }
+  .form-success h3{
+    color:var(--white); font-size:1.1rem; margin-bottom:8px;
+  }
+  .form-success p{ color:var(--gray-400); font-size:14px; }
+
+  /* ══════════ FOOTER ══════════ */
+  .site-footer{
+    background:var(--gray-950); color:var(--gray-500);
+    padding:40px 0 32px; font-size:12.5px;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+  .footer-inner{
+    display:flex; justify-content:space-between; align-items:center;
+    gap:24px; flex-wrap:wrap;
+  }
+  .footer-brand{
+    display:flex; align-items:center; gap:10px; color:var(--gray-400);
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:600;
+  }
+  .footer-brand .nav-mark{ width:22px; height:22px; }
+  .footer-brand .nav-mark::after{ width:8px; height:8px; }
+  .footer-copy{ color:var(--gray-600); font-size:12px; }
+  .footer-meta{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--gray-600); font-weight:600;
+  }
+  .footer-meta .status-dot{ background:var(--success); box-shadow:0 0 0 3px rgba(16,185,129,0.12); }
+
+  /* ══════════ REVEAL ══════════ */
+  .reveal{ opacity:0; transform:translateY(20px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.visible{ opacity:1; transform:translateY(0); }
+
+  /* focus styles */
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--cyan-500); outline-offset:3px;
+    border-radius:4px;
+  }
+
+  ::selection{ background:var(--cyan-500); color:var(--white); }
+</style>
+</head>
+<body>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-topline">
+      <div class="hero-status">
+        <span class="status-dot"></span>
+        <span>Aceptando nuevos alumnos · 2026</span>
+      </div>
+      <div class="hero-meta">ENTERPRISE AI · 1:1 TRAINING</div>
+    </div>
+
+    <div class="hero-brand-row" style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">
+      <div class="nav-mark" aria-hidden="true" style="width:32px;height:32px;"></div>
+      <div style="font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gray-900);">ADRIAN ORTIZ <span style="color:var(--gray-400);font-weight:400;">· BRANDBOOST AI</span></div>
+    </div>
+
+    <h1>
+      <span class="line">Aprendé a usar IA</span>
+      <span class="line"><span class="accent">como un profesional</span>,</span>
+      <span class="line muted">no como un principiante.</span>
+    </h1>
+
+    <p class="hero-sub">
+      Sesiones 1 a 1 para profesionales y empresas. Aplicás Inteligencia Artificial directamente a tu trabajo, negocio u operación. Entrenamiento aplicado — no teoría, no curso grabado, no playbook genérico.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#contacto" class="btn btn-primary">
+        Solicitar una sesión
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a href="#modalidades" class="btn btn-ghost">Ver modalidades</a>
+    </div>
+
+    <div class="hero-meta-row">
+      <div>
+        <div class="meta-k">Formato</div>
+        <div class="meta-v">Sesiones 1 a 1, en vivo</div>
+      </div>
+      <div>
+        <div class="meta-k">Idioma</div>
+        <div class="meta-v">Español · Remoto global</div>
+      </div>
+      <div>
+        <div class="meta-k">Enfoque</div>
+        <div class="meta-v">Aplicado a tu caso real</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PROBLEM ════════ -->
+<section class="problem reveal" id="problema">
+  <div class="container">
+    <div class="problem-grid">
+      <div>
+        <span class="eyebrow">El problema</span>
+        <h2>Usar IA "por encima" no te <span class="accent">da ventaja</span>.</h2>
+        <p class="lead" style="margin-top:24px;">
+          Hoy casi todos usan IA. Muy pocos saben usarla bien. La diferencia entre un prompt genérico y uno profesional es la diferencia entre un resultado mediocre y uno de nivel consultoría.
+        </p>
+      </div>
+      <ul class="problem-list">
+        <li>
+          <span class="idx">01</span>
+          <span>Escribís prompts básicos y los resultados son <strong>mediocres y genéricos.</strong></span>
+        </li>
+        <li>
+          <span class="idx">02</span>
+          <span>Probás herramientas sin saber <strong>cuál usar para qué</strong> ni cómo integrarlas.</span>
+        </li>
+        <li>
+          <span class="idx">03</span>
+          <span>No sabés cómo aplicar IA a <strong>tu trabajo real</strong>, más allá de resumir mails.</span>
+        </li>
+        <li>
+          <span class="idx">04</span>
+          <span>Sentís que <strong>podrías hacer mucho más</strong>, pero no sabés por dónde empezar.</span>
+        </li>
+        <li>
+          <span class="idx">05</span>
+          <span>Creés que ChatGPT es el santo grial. <strong>Spoiler: no lo es.</strong></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ MODALIDADES ════════ -->
+<section class="modalidades reveal" id="modalidades">
+  <div class="container">
+    <div class="mod-head">
+      <span class="eyebrow">Modalidades</span>
+      <h2>Dos formatos. <span class="accent">Mismo nivel de obsesión.</span></h2>
+      <p class="lead" style="margin-top:20px;">
+        Trabajo con profesionales individuales y con equipos empresariales. En ambos casos el formato es el mismo: aplicado, en vivo, sobre tu contexto real.
+      </p>
+    </div>
+
+    <div class="mod-grid">
+      <!-- Individual -->
+      <div class="mod-card">
+        <div class="mod-tag">Individual · 1 a 1</div>
+        <div class="mod-title">Asesoría Profesional</div>
+        <div class="mod-sub">Para profesionales, founders, freelancers y operadores que quieren dominar IA aplicada a su trabajo.</div>
+        <ul class="mod-features">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Sesiones <strong>1 a 1 en vivo</strong>, 100% remoto</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Todo se aplica a <strong>tu caso real</strong> desde la primera sesión</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Prompts, flujos y herramientas <strong>listos para usar</strong></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Grabaciones de cada sesión + soporte directo</span></li>
+        </ul>
+        <a href="#contacto" class="btn btn-primary" data-modalidad="individual">
+          Solicitar asesoría 1 a 1
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+      <!-- Empresarial -->
+      <div class="mod-card dark">
+        <div class="mod-tag">Empresa · Equipos</div>
+        <div class="mod-title">Asesoría Empresarial</div>
+        <div class="mod-sub">Para empresas y equipos que necesitan integrar IA de forma coordinada en sus operaciones, marketing, ventas o producto.</div>
+        <ul class="mod-features">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Programa <strong>a medida del equipo</strong> (5 a 50+ personas)</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Diagnóstico previo</strong> de procesos y oportunidades de IA</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Workshops en vivo + <strong>implementación acompañada</strong></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Playbooks, automatizaciones y <strong>SOPs específicos</strong></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Seguimiento trimestral y actualización continua</span></li>
+        </ul>
+        <a href="#contacto" class="btn btn-primary" data-modalidad="empresa">
+          Solicitar propuesta empresarial
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ SESSIONS ════════ -->
+<section class="sessions reveal" id="sesiones">
+  <div class="container">
+    <div class="sessions-head">
+      <span class="eyebrow">Qué trabajamos</span>
+      <h2>Entrenamiento aplicado, <span class="accent">sin relleno.</span></h2>
+      <p class="lead" style="margin-top:20px;">
+        Cada sesión se arma sobre tu contexto. No hay slides. Abrimos herramientas, escribimos prompts reales, resolvemos lo que necesitás resolver.
+      </p>
+    </div>
+
+    <div class="session-grid">
+      <div class="session-card">
+        <div class="session-num">01</div>
+        <div class="session-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <div class="session-title">Ingeniería de prompts</div>
+        <div class="session-desc">Nivel práctico, no académico. Construís prompts que generan resultados de nivel profesional de forma consistente.</div>
+      </div>
+      <div class="session-card">
+        <div class="session-num">02</div>
+        <div class="session-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <div class="session-title">Herramientas avanzadas</div>
+        <div class="session-desc">Uso avanzado de las herramientas que realmente importan para tu caso — más allá del stack obvio.</div>
+      </div>
+      <div class="session-card">
+        <div class="session-num">03</div>
+        <div class="session-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <div class="session-title">Aplicación directa</div>
+        <div class="session-desc">Todo se aplica a tu negocio o trabajo real. Sin teoría sin contexto ni ejercicios que no vas a volver a tocar.</div>
+      </div>
+      <div class="session-card">
+        <div class="session-num">04</div>
+        <div class="session-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="session-title">Sistemas mentales</div>
+        <div class="session-desc">Frameworks para pensar más rápido, tomar mejores decisiones y operar con IA como un multiplicador, no un juguete.</div>
+      </div>
+      <div class="session-card">
+        <div class="session-num">05</div>
+        <div class="session-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
+        <div class="session-title">Casos reales</div>
+        <div class="session-desc">Resolvemos problemas reales de tu día a día. Nada genérico — cada ejercicio sale de tu bandeja de entrada.</div>
+      </div>
+      <div class="session-card">
+        <div class="session-num">06</div>
+        <div class="session-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+        <div class="session-title">Grabaciones</div>
+        <div class="session-desc">Cada sesión queda grabada. Podés volver, repetir un flujo o consolidar lo aprendido a tu ritmo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ TOOLS ════════ -->
+<section class="tools reveal" id="herramientas">
+  <div class="container">
+    <div class="tools-head">
+      <div>
+        <span class="eyebrow">Stack · Herramientas</span>
+        <h2>Lo que domino, <span class="accent">trabajamos juntos.</span></h2>
+        <p class="lead" style="margin-top:16px;">
+          No soy fan de una sola plataforma. Trabajo con las herramientas que efectivamente resuelven cada problema — desde modelos de lenguaje hasta automatización, video, voz y código.
+        </p>
+      </div>
+      <div class="tools-count">
+        Stack activo
+        <strong>20+</strong>
+      </div>
+    </div>
+
+    <!-- Modelos de lenguaje -->
+    <div class="tool-group">
+      <div class="tool-group-label">Modelos de lenguaje &amp; razonamiento</div>
+      <div class="tool-grid">
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#10a37f;"><img src="https://unpkg.com/simple-icons@13.14.0/icons/openai.svg" alt="OpenAI"></div>
+          <div><div class="tool-name">OpenAI</div><div class="tool-cat">GPT · o-series</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#d97757;"><img src="https://cdn.simpleicons.org/anthropic/ffffff" alt="Claude"></div>
+          <div><div class="tool-name">Claude</div><div class="tool-cat">Anthropic</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo"><img src="https://cdn.simpleicons.org/googlegemini" alt="Gemini"></div>
+          <div><div class="tool-name">Gemini</div><div class="tool-cat">Google · 1.5 / 2</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#20808d;"><img src="https://cdn.simpleicons.org/perplexity/ffffff" alt="Perplexity"></div>
+          <div><div class="tool-name">Perplexity</div><div class="tool-cat">Research · Search</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;"><img src="https://cdn.simpleicons.org/x/ffffff" alt="Grok"></div>
+          <div><div class="tool-name">Grok</div><div class="tool-cat">xAI</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#4D6BFE;color:#fff;font-weight:700;font-size:11px;letter-spacing:.02em;">DS</div>
+          <div><div class="tool-name">DeepSeek</div><div class="tool-cat">Open reasoning</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dev · Code · Agents -->
+    <div class="tool-group">
+      <div class="tool-group-label">Desarrollo &amp; agentes</div>
+      <div class="tool-grid">
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#d97757;"><img src="https://cdn.simpleicons.org/anthropic/ffffff" alt="Claude Code"></div>
+          <div><div class="tool-name">Claude Code</div><div class="tool-cat">Agent · Dev</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#4285F4;"><img src="https://cdn.simpleicons.org/google/ffffff" alt="Google Antigravity"></div>
+          <div><div class="tool-name">Google Antigravity</div><div class="tool-cat">Agentic IDE</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;"><img src="https://www.cursor.com/apple-touch-icon.png" alt="Cursor" style="filter:none;"></div>
+          <div><div class="tool-name">Cursor</div><div class="tool-cat">AI editor</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#F26207;"><img src="https://cdn.simpleicons.org/replit/ffffff" alt="Replit"></div>
+          <div><div class="tool-name">Replit Agent</div><div class="tool-cat">Full-stack AI</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;"><img src="https://cdn.simpleicons.org/vercel/ffffff" alt="v0"></div>
+          <div><div class="tool-name">v0 · Vercel</div><div class="tool-cat">UI generation</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo"><img src="https://lovable.dev/favicon.ico" alt="Lovable" style="filter:none;"></div>
+          <div><div class="tool-name">Lovable</div><div class="tool-cat">App builder</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Automatización -->
+    <div class="tool-group">
+      <div class="tool-group-label">Automatización &amp; workflows</div>
+      <div class="tool-grid">
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#EA4B71;"><img src="https://cdn.simpleicons.org/n8n/ffffff" alt="n8n"></div>
+          <div><div class="tool-name">n8n</div><div class="tool-cat">Workflow OSS</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#6D00CC;"><img src="https://cdn.simpleicons.org/make/ffffff" alt="Make"></div>
+          <div><div class="tool-name">Make</div><div class="tool-cat">Integromat</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#FF4A00;"><img src="https://cdn.simpleicons.org/zapier/ffffff" alt="Zapier"></div>
+          <div><div class="tool-name">Zapier</div><div class="tool-cat">Integrations</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#0f172a;color:#fff;font-weight:700;font-size:11px;letter-spacing:.02em;">Retell</div>
+          <div><div class="tool-name">Retell AI</div><div class="tool-cat">Voice agents</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo"><img src="https://vapi.ai/favicon.ico" alt="Vapi" style="filter:none;"></div>
+          <div><div class="tool-name">Vapi</div><div class="tool-cat">Voice API</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#3B82F6;color:#fff;font-weight:700;font-size:13px;">Rel</div>
+          <div><div class="tool-name">Relevance AI</div><div class="tool-cat">AI teams</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Creativas · Imagen / Video / Voz -->
+    <div class="tool-group">
+      <div class="tool-group-label">Imagen, video &amp; voz</div>
+      <div class="tool-grid">
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#FBBF24;"><img src="https://cdn.simpleicons.org/google/ffffff" alt="Nano Banana"></div>
+          <div><div class="tool-name">Nano Banana</div><div class="tool-cat">Image · Google</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;"><img src="https://higgsfield.ai/favicon.ico" alt="Higgsfield" style="filter:none;"></div>
+          <div><div class="tool-name">Higgsfield</div><div class="tool-cat">Video AI</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;color:#fff;font-weight:700;font-size:12px;">MJ</div>
+          <div><div class="tool-name">Midjourney</div><div class="tool-cat">Image</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;"><img src="https://unpkg.com/simple-icons@13.14.0/icons/openai.svg" alt="Sora"></div>
+          <div><div class="tool-name">Sora</div><div class="tool-cat">Video · OpenAI</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;color:#fff;font-weight:700;font-size:12px;">Rw</div>
+          <div><div class="tool-name">Runway</div><div class="tool-cat">Video · Gen</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#000;"><img src="https://cdn.simpleicons.org/elevenlabs/ffffff" alt="ElevenLabs"></div>
+          <div><div class="tool-name">ElevenLabs</div><div class="tool-cat">Voice cloning</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo filled" style="background:#3056FF;color:#fff;font-weight:700;font-size:12px;">HG</div>
+          <div><div class="tool-name">HeyGen</div><div class="tool-cat">Avatars</div></div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-logo"><img src="https://cdn.simpleicons.org/figma" alt="Figma"></div>
+          <div><div class="tool-name">Figma AI</div><div class="tool-cat">Design</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ CUPOS ════════ -->
+<section class="cupos reveal" id="cupos">
+  <div class="container">
+    <div class="cupos-card">
+      <div class="cupos-content">
+        <span class="eyebrow">Política de cupos</span>
+        <h2>Tomo un número <span class="accent">limitado de alumnos</span> por mes.</h2>
+        <p>
+          Cada proceso exige atención real. Por eso mantengo <strong>máximo 6 alumnos individuales activos</strong> y <strong>2 programas empresariales en paralelo</strong>. No es marketing — es la única forma en que el formato 1 a 1 funciona con el nivel de profundidad que prometo.
+        </p>
+        <p style="margin-top:14px;">
+          Si los cupos están cerrados cuando escribas, te ingreso a la lista y te aviso en cuanto se libera uno.
+        </p>
+      </div>
+      <div class="cupos-visual">
+        <div class="cupos-big">2<span>/6</span></div>
+        <div class="cupos-label">Cupos disponibles</div>
+        <div class="cupos-status">
+          <span class="status-dot"></span>
+          <span>Abiertos este mes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ DIFFERENTIAL ════════ -->
+<section class="diff reveal">
+  <div class="container">
+    <span class="eyebrow">La diferencia</span>
+    <h2>No es un curso. No es teoría.<br><span class="accent">Es entrenamiento aplicado.</span></h2>
+    <p class="diff-lead">
+      La mayoría aprende IA viendo videos. El problema: <strong>no saben aplicarla</strong>. Acá no hay mentor pregrabado ni comunidad genérica. Hay una persona, tu caso, y una sesión donde salís sabiendo más que al entrar.
+    </p>
+
+    <div class="diff-grid">
+      <div class="diff-item">
+        <div class="diff-num">01 / REALIDAD</div>
+        <div class="diff-title">Trabajamos sobre tu realidad.</div>
+        <div class="diff-desc">Tu industria, tus problemas, tus herramientas, tus entregables. Todo sale de tu contexto — no de un caso Harvard.</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-num">02 / TIEMPO REAL</div>
+        <div class="diff-title">Feedback en tiempo real.</div>
+        <div class="diff-desc">Corrección en vivo. Sin esperar tickets, sin buscar respuestas en foros, sin videos que ya están desactualizados.</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-num">03 / PRÁCTICA</div>
+        <div class="diff-title">Aprendés haciendo.</div>
+        <div class="diff-desc">No hay presentaciones. Abrimos herramientas, escribimos prompts, rompemos cosas, y salís con algo que podés usar.</div>
+      </div>
+    </div>
+
+    <div class="diff-signature">
+      <div class="diff-signature-text">
+        El objetivo no es que <em>sepas</em> IA. El objetivo es que <em>operes</em> con IA — como un profesional que la tiene integrada al flujo de trabajo.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ RESULTS ════════ -->
+<section class="results reveal" id="resultados">
+  <div class="container">
+    <div style="max-width:720px;">
+      <span class="eyebrow">Resultados esperados</span>
+      <h2>Lo que cambia cuando <span class="accent">usás IA bien.</span></h2>
+    </div>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+        <div class="result-title">Producís más</div>
+        <div class="result-desc">El mismo output en una fracción del tiempo. O más output en el mismo tiempo.</div>
+      </div>
+      <div class="result-card">
+        <div class="result-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V7a3 3 0 1 1 6 0v4"/><path d="M5 11h14v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="result-title">Decidís mejor</div>
+        <div class="result-desc">Más datos, más ángulos, menos sesgo. La IA como segundo cerebro, no como autocomplete.</div>
+      </div>
+      <div class="result-card">
+        <div class="result-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.5 17 14.5 18 22 12 18.5 6 22 7 14.5 2 9.5 9 8.5 12 2"/></svg></div>
+        <div class="result-title">Generás calidad</div>
+        <div class="result-desc">Contenido, análisis y entregables de nivel consultoría. Consistentes, no al azar.</div>
+      </div>
+      <div class="result-card">
+        <div class="result-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg></div>
+        <div class="result-title">Sos más valioso</div>
+        <div class="result-desc">Profesionalmente. Tener IA integrada al flujo es, hoy, ventaja competitiva real.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PROCESS ════════ -->
+<section class="process reveal" id="proceso">
+  <div class="container">
+    <div style="max-width:720px;">
+      <span class="eyebrow">Cómo funciona</span>
+      <h2>De solicitar una sesión a <span class="accent">operar con IA.</span></h2>
+    </div>
+
+    <div class="process-steps">
+      <div class="step">
+        <div class="step-num">PASO 01</div>
+        <div class="step-title">Solicitás una sesión</div>
+        <div class="step-desc">Dejás tus datos en el formulario. Te contesto por WhatsApp o email en menos de 24 horas.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">PASO 02</div>
+        <div class="step-title">Diagnóstico rápido</div>
+        <div class="step-desc">Conversamos sobre tu contexto, tu nivel actual con IA y qué querés resolver. Sin compromiso.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">PASO 03</div>
+        <div class="step-title">Agendamos</div>
+        <div class="step-desc">Coordinamos día y horario que te funcione. Todo remoto — Zoom, Meet o lo que prefieras.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">PASO 04</div>
+        <div class="step-title">Entrenamos</div>
+        <div class="step-desc">Sesión aplicada sobre tu caso real. Salís con prompts, flujos y herramientas que podés usar mañana.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ ABOUT ════════ -->
+<section class="about reveal" id="sobre-mi">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-photo">
+        <img src="https://res.cloudinary.com/dhzmkxbek/image/upload/v1764023274/Disen%CC%83o_sin_ti%CC%81tulo_7_guvgsu.png" alt="Adrian Ortiz">
+        <div class="about-photo-meta">
+          <span>Adrian Ortiz</span>
+          <span>Founder · Brandboost AI</span>
+        </div>
+      </div>
+      <div>
+        <span class="eyebrow">Quién está detrás</span>
+        <h2>Adrian Ortiz.<br><span class="accent">Fundador de Brandboost AI.</span></h2>
+        <div class="about-text" style="margin-top:28px;">
+          <p>
+            Soy un nerd de la IA con experiencia como <strong>dueño y frente de Operaciones</strong> de varias empresas — desde antes de que "IA" fuera una casilla en todo pitch deck. En esos roles entendí algo que hoy se repite: el mayor problema de las personas no es la falta de herramientas, es <strong>no saber cómo obtener el mismo (o mejor) resultado en menos tiempo.</strong>
+          </p>
+          <p>
+            Hace más de un año me obsesioné con la Inteligencia Artificial y paso <strong>12 horas al día</strong> dedicado a eso. Trabajo con empresas y profesionales implementando IA en su día a día — no desde la teoría, sino desde la práctica.
+          </p>
+          <p>
+            Estas sesiones nacen de ver el mismo problema una y otra vez: personas usando IA, pero sin aprovecharla. Por eso el enfoque es simple.
+          </p>
+        </div>
+        <div class="about-quote">
+          "Trabajo con vos, en tu caso real, hasta que sepas usar IA como una herramienta profesional."
+        </div>
+        <ul class="about-chips">
+          <li>IA aplicada</li>
+          <li>Operaciones</li>
+          <li>1 a 1 personalizado</li>
+          <li>Enfoque práctico</li>
+          <li>Sin teoría</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FAQ ════════ -->
+<section class="faq reveal" id="faq">
+  <div class="container-narrow">
+    <span class="eyebrow">Preguntas frecuentes</span>
+    <h2>Todo lo que <span class="accent">deberías preguntar.</span></h2>
+
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>¿Esto es para principiantes? <span class="plus" aria-hidden="true"></span></summary>
+        <div class="faq-answer">Es para <strong>todos los niveles</strong>. Adaptamos la sesión a donde estás hoy — desde quien nunca abrió ChatGPT hasta quien ya tiene flujos armados pero siente que le falta profundidad. El formato 1 a 1 permite justamente eso: calibrar.</div>
+      </details>
+      <details class="faq-item">
+        <summary>Ya uso IA todos los días. ¿Vale la pena? <span class="plus" aria-hidden="true"></span></summary>
+        <div class="faq-answer">Probablemente más. Hay una diferencia enorme entre <strong>usar IA y usar IA bien</strong>. Si ya sos usuario, optimizamos cómo la usás — prompts, stack, automatizaciones, contexto. La mayoría deja 70% de la potencia sobre la mesa.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Aplica a cualquier industria? <span class="plus" aria-hidden="true"></span></summary>
+        <div class="faq-answer">Sí. La IA es transversal — marketing, legal, finanzas, operaciones, producto, ventas, educación, salud. <strong>Adaptamos todo a tu caso</strong>, sin importar el rubro. El formato 1 a 1 está pensado exactamente para eso.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Qué pasa después de que dejo mis datos? <span class="plus" aria-hidden="true"></span></summary>
+        <div class="faq-answer">Recibís un mensaje por <strong>WhatsApp o email en menos de 24 horas</strong> para coordinar una breve conversación de diagnóstico. Ahí decidimos juntos si tiene sentido avanzar, y cómo.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Dónde se hacen las sesiones? <span class="plus" aria-hidden="true"></span></summary>
+        <div class="faq-answer">100% remoto, por Zoom o Meet. Cada sesión queda <strong>grabada</strong> para que puedas repasar o retomar flujos después. Trabajo con profesionales en LATAM, España y US.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Necesito tener alguna herramienta previa? <span class="plus" aria-hidden="true"></span></summary>
+        <div class="faq-answer">No. Con una cuenta de ChatGPT o Claude es suficiente para empezar. Si en algún momento necesitás algo más específico para tu caso, lo conversamos y te guío.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ CONTACT ════════ -->
+<section class="contact reveal" id="contacto">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-head">
+        <span class="eyebrow">Solicitar una sesión</span>
+        <h2>Dejame tus datos. <span class="accent">Yo me pongo en contacto.</span></h2>
+        <p class="contact-sub">
+          Si usás IA todos los días, deberías saber usarla bien. Contestame las preguntas y te escribo en menos de 24 horas para coordinar.
+        </p>
+
+      </div>
+
+      <div class="form-card">
+        <form id="leadForm" novalidate>
+          <div class="form-title">Formulario de contacto</div>
+          <div class="form-hint">Los campos marcados con * son obligatorios.</div>
+
+          <div class="form-field">
+            <label for="nombre">Nombre y apellido <span class="req">*</span></label>
+            <input type="text" id="nombre" name="nombre" required placeholder="Ej: Juan Pérez">
+          </div>
+
+          <div class="form-field">
+            <label for="email">Email <span class="req">*</span></label>
+            <input type="email" id="email" name="email" required placeholder="tu@email.com">
+          </div>
+
+          <div class="form-field">
+            <label for="whatsapp">WhatsApp</label>
+            <div class="phone-group">
+              <div class="cdd" data-cdd="pais">
+                <button type="button" class="cdd-btn" data-selected="AR" aria-haspopup="listbox">
+                  <span class="flag">🇦🇷</span>
+                  <span class="dial">+54</span>
+                </button>
+                <div class="cdd-menu" role="listbox"></div>
+              </div>
+              <input type="tel" id="whatsapp" name="whatsapp" placeholder="11 1234 5678">
+            </div>
+            <input type="hidden" id="pais" name="pais" value="AR">
+          </div>
+
+          <div class="form-field">
+            <label for="rol">Rol / empresa</label>
+            <input type="text" id="rol" name="rol" placeholder="Ej: CEO · Agencia · Operations">
+          </div>
+
+          <div class="form-field">
+            <label>Modalidad <span class="req">*</span></label>
+            <div class="cdd" data-cdd="modalidad">
+              <button type="button" class="cdd-btn" aria-haspopup="listbox">
+                <span class="cdd-placeholder">Elegí una opción</span>
+              </button>
+              <div class="cdd-menu" role="listbox">
+                <div class="cdd-opt" data-value="individual">Asesoría 1 a 1 (individual)</div>
+                <div class="cdd-opt" data-value="empresa">Asesoría Empresarial (equipo)</div>
+                <div class="cdd-opt" data-value="no-se">Todavía no estoy seguro</div>
+              </div>
+            </div>
+            <input type="hidden" id="modalidad" name="modalidad" required>
+          </div>
+
+          <div class="form-field">
+            <label>Nivel con IA <span class="req">*</span></label>
+            <div class="cdd" data-cdd="nivel">
+              <button type="button" class="cdd-btn" aria-haspopup="listbox">
+                <span class="cdd-placeholder">Elegí una opción</span>
+              </button>
+              <div class="cdd-menu" role="listbox">
+                <div class="cdd-opt" data-value="cero">Recién empiezo — nunca usé IA en serio</div>
+                <div class="cdd-opt" data-value="basico">Uso básica — ChatGPT casual</div>
+                <div class="cdd-opt" data-value="intermedio">Intermedia — prompts largos, varias herramientas</div>
+                <div class="cdd-opt" data-value="avanzado">Avanzada — quiero profundizar y optimizar</div>
+              </div>
+            </div>
+            <input type="hidden" id="nivel" name="nivel" required>
+          </div>
+
+          <div class="form-field">
+            <label for="objetivo">Qué querés resolver <span class="req">*</span></label>
+            <textarea id="objetivo" name="objetivo" required placeholder="Contame brevemente tu contexto y qué esperarías de una sesión 1 a 1."></textarea>
+          </div>
+
+          <label class="form-check">
+            <input type="checkbox" required>
+            <span>Acepto ser contactado por email o WhatsApp para coordinar una sesión de diagnóstico.</span>
+          </label>
+
+          <button type="submit" class="form-submit">
+            Enviar solicitud
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+
+        <div class="form-success" id="formSuccess">
+          <div class="form-success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3>Recibí tu solicitud.</h3>
+          <p>Te escribo en menos de 24 horas para coordinar la sesión de diagnóstico.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FOOTER ════════ -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="nav-mark" aria-hidden="true"></div>
+        <span>Adrian Ortiz · Brandboost AI</span>
+      </div>
+      <div class="footer-copy">© 2026 · Asesorías de IA 1 a 1 · Todos los derechos reservados</div>
+      <div class="footer-meta">
+        <span class="status-dot"></span>
+        <span>Systems Operational</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Pre-select modality from CTA buttons
+  document.querySelectorAll('[data-modalidad]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = btn.getAttribute('data-modalidad');
+      setCddValue('modalidad', val);
+    });
+  });
+
+  /* ──────────── Custom dropdowns ──────────── */
+  const COUNTRIES = [
+    {c:'AR',n:'Argentina',d:'+54',f:'🇦🇷'},
+    {c:'BO',n:'Bolivia',d:'+591',f:'🇧🇴'},
+    {c:'BR',n:'Brasil',d:'+55',f:'🇧🇷'},
+    {c:'CL',n:'Chile',d:'+56',f:'🇨🇱'},
+    {c:'CO',n:'Colombia',d:'+57',f:'🇨🇴'},
+    {c:'CR',n:'Costa Rica',d:'+506',f:'🇨🇷'},
+    {c:'CU',n:'Cuba',d:'+53',f:'🇨🇺'},
+    {c:'DO',n:'Rep. Dominicana',d:'+1',f:'🇩🇴'},
+    {c:'EC',n:'Ecuador',d:'+593',f:'🇪🇨'},
+    {c:'SV',n:'El Salvador',d:'+503',f:'🇸🇻'},
+    {c:'ES',n:'España',d:'+34',f:'🇪🇸'},
+    {c:'US',n:'Estados Unidos',d:'+1',f:'🇺🇸'},
+    {c:'GT',n:'Guatemala',d:'+502',f:'🇬🇹'},
+    {c:'HN',n:'Honduras',d:'+504',f:'🇭🇳'},
+    {c:'MX',n:'México',d:'+52',f:'🇲🇽'},
+    {c:'NI',n:'Nicaragua',d:'+505',f:'🇳🇮'},
+    {c:'PA',n:'Panamá',d:'+507',f:'🇵🇦'},
+    {c:'PY',n:'Paraguay',d:'+595',f:'🇵🇾'},
+    {c:'PE',n:'Perú',d:'+51',f:'🇵🇪'},
+    {c:'PR',n:'Puerto Rico',d:'+1',f:'🇵🇷'},
+    {c:'UY',n:'Uruguay',d:'+598',f:'🇺🇾'},
+    {c:'VE',n:'Venezuela',d:'+58',f:'🇻🇪'},
+    {c:'CA',n:'Canadá',d:'+1',f:'🇨🇦'},
+    {c:'FR',n:'Francia',d:'+33',f:'🇫🇷'},
+    {c:'IT',n:'Italia',d:'+39',f:'🇮🇹'},
+    {c:'DE',n:'Alemania',d:'+49',f:'🇩🇪'},
+    {c:'UK',n:'Reino Unido',d:'+44',f:'🇬🇧'},
+    {c:'PT',n:'Portugal',d:'+351',f:'🇵🇹'},
+  ];
+
+  // Build country dropdown
+  const paisCdd = document.querySelector('[data-cdd="pais"]');
+  if (paisCdd) {
+    const menu = paisCdd.querySelector('.cdd-menu');
+    menu.innerHTML = `
+      <div class="cdd-search"><input type="text" placeholder="Buscar país..." autocomplete="off"></div>
+      <div class="cdd-list">
+        ${COUNTRIES.map(p => `
+          <div class="cdd-opt${p.c==='AR'?' selected':''}" data-value="${p.c}" data-dial="${p.d}" data-flag="${p.f}" data-name="${p.n}">
+            <span class="flag">${p.f}</span>
+            <span>${p.n}</span>
+            <span class="dial">${p.d}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    const search = menu.querySelector('input');
+    search.addEventListener('input', () => {
+      const q = search.value.toLowerCase().trim();
+      menu.querySelectorAll('.cdd-opt').forEach(opt => {
+        const match = opt.dataset.name.toLowerCase().includes(q) || opt.dataset.dial.includes(q);
+        opt.style.display = match ? '' : 'none';
+      });
+    });
+    search.addEventListener('click', e => e.stopPropagation());
+  }
+
+  function setCddValue(name, val){
+    const cdd = document.querySelector(`[data-cdd="${name}"]`);
+    if (!cdd) return;
+    const opt = cdd.querySelector(`.cdd-opt[data-value="${val}"]`);
+    if (!opt) return;
+    opt.click();
+  }
+
+  document.querySelectorAll('.cdd').forEach(cdd => {
+    const btn = cdd.querySelector('.cdd-btn');
+    const menu = cdd.querySelector('.cdd-menu');
+    const name = cdd.dataset.cdd;
+    const hidden = document.getElementById(name);
+    const isPais = name === 'pais';
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = btn.classList.contains('open');
+      document.querySelectorAll('.cdd-btn.open').forEach(b => {
+        b.classList.remove('open');
+        b.nextElementSibling.classList.remove('open');
+      });
+      if (!open) {
+        btn.classList.add('open');
+        menu.classList.add('open');
+        const input = menu.querySelector('.cdd-search input');
+        if (input) setTimeout(() => input.focus(), 50);
+      }
+    });
+
+    menu.addEventListener('click', (e) => {
+      const opt = e.target.closest('.cdd-opt');
+      if (!opt) return;
+      menu.querySelectorAll('.cdd-opt.selected').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      if (isPais) {
+        btn.innerHTML = `<span class="flag">${opt.dataset.flag}</span><span class="dial">${opt.dataset.dial}</span>`;
+      } else {
+        btn.innerHTML = opt.innerHTML;
+      }
+      if (hidden) hidden.value = opt.dataset.value;
+      btn.classList.remove('open');
+      menu.classList.remove('open');
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.cdd-btn.open').forEach(b => {
+      b.classList.remove('open');
+      b.nextElementSibling.classList.remove('open');
+    });
+  });
+
+  // Form
+  const form = document.getElementById('leadForm');
+  const success = document.getElementById('formSuccess');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    // Validate hidden custom selects
+    const modalidad = document.getElementById('modalidad');
+    const nivel = document.getElementById('nivel');
+    let firstInvalid = null;
+    [['modalidad', modalidad], ['nivel', nivel]].forEach(([n, el]) => {
+      const cdd = document.querySelector(`[data-cdd="${n}"] .cdd-btn`);
+      if (!el.value) {
+        if (!firstInvalid) firstInvalid = cdd;
+        cdd.style.borderColor = '#ef4444';
+      } else {
+        cdd.style.borderColor = '';
+      }
+    });
+    if (!form.checkValidity() || firstInvalid) {
+      if (firstInvalid) firstInvalid.scrollIntoView({block:'center', behavior:'smooth'});
+      else form.reportValidity();
+      return;
+    }
+
+    // Build phone with dial code
+    const paisCddBtn = document.querySelector('[data-cdd="pais"] .cdd-btn');
+    const dialSpan = paisCddBtn ? paisCddBtn.querySelector('.dial') : null;
+    const dialCode = dialSpan ? dialSpan.textContent.trim() : '+54';
+    const rawPhone = document.getElementById('whatsapp').value.trim();
+    const fullPhone = rawPhone ? dialCode + rawPhone.replace(/\s+/g, '') : '';
+
+    // Collect data
+    const payload = {
+      username: 'adrian',
+      name: document.getElementById('nombre').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: fullPhone,
+      message: [
+        'Modalidad: ' + (modalidad.value || '-'),
+        'Nivel IA: ' + (nivel.value || '-'),
+        'Rol: ' + (document.getElementById('rol').value.trim() || '-'),
+        'Objetivo: ' + (document.getElementById('objetivo').value.trim() || '-'),
+        'País: ' + (document.getElementById('pais').value || '-')
+      ].join('\n'),
+      source: 'asesoria-ia',
+    };
+
+    // Disable submit button
+    const submitBtn = form.querySelector('.form-submit');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Enviando...';
+
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        form.style.display = 'none';
+        success.classList.add('active');
+      } else {
+        alert('Error al enviar: ' + (data.error || 'Intenta de nuevo.'));
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    } catch (err) {
+      alert('Error de conexión. Intenta de nuevo.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
+  });
+</script>
+
+</body>
+</html>
