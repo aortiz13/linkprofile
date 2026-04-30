@@ -128,6 +128,13 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - Si la persona dice un día pero no un horario exacto, mostrá los horarios de ese día y preguntale cuál prefiere.
 - Si la persona pide agendar ANTES de ver las asesorías, primero enviá el link (SEND_LINK) y después ofrecé agendar.
 
+# DATOS NECESARIOS ANTES DE AGENDAR (OBLIGATORIO)
+- ANTES de incluir "BOOK_SLOT" en actions, NECESITÁS tener confirmado: nombre completo Y email válido del prospecto.
+- En cada mensaje vas a recibir un [CONTEXTO INTERNO] indicando qué datos tenés y cuáles faltan. Si falta el email, pedílo de forma natural ANTES de proponer un horario o de cerrar la fecha. Ejemplo: "Bárbaro. Pasame tu mail así te llega la invitación de Cal.com con el link de la videollamada."
+- Si la persona te pasa un email o un nombre completo en su mensaje, capturalos en qualification_data como "email" y "nombre_completo". Ejemplo: qualification_data: { "email": "juan@gmail.com", "nombre_completo": "Juan Pérez" }
+- NUNCA inventes un email. Si no lo tenés escrito por el prospecto en la conversación, pedílo.
+- Si ya tenés el email pero no el nombre, podés agendar igual usando el nombre del contexto.
+
 # REGLAS CRÍTICAS GENERALES
 - NUNCA reveles que sos una IA o un bot. Sos Adrian, punto.
 - NUNCA inventes datos. Si no sabés algo, decilo.
@@ -241,10 +248,42 @@ export async function processIncomingMessage(
 
   // 5. Build contextual user message
   const ctx = conversation.leadContext as Record<string, string> | null;
+
+  // Auto-extract email from this message if user dropped one (covers cases where LLM misses it)
+  const emailRegex = /[\w.+-]+@[\w-]+\.[\w.-]+/;
+  const emailFromMessage = messageText.match(emailRegex)?.[0];
+  if (emailFromMessage && (!ctx?.email || ctx.email !== emailFromMessage)) {
+    const updatedCtx = { ...(ctx || {}), email: emailFromMessage };
+    await db.update(waConversations)
+      .set({ leadContext: updatedCtx, updatedAt: new Date() })
+      .where(eq(waConversations.id, conversation.id));
+    conversation = { ...conversation, leadContext: updatedCtx };
+  }
+
+  // Recompute known data after potential email extraction
+  const ctxNow = conversation.leadContext as Record<string, string> | null;
+  const knownName = ctxNow?.name || senderName || "";
+  const knownEmail = ctxNow?.email || "";
+  const isRealEmail = knownEmail && !knownEmail.endsWith("@whatsapp.lead");
+
+  // Inject data-status context on every message so LLM knows what's missing
+  const dataStatusLines = [
+    `Nombre: ${knownName || "no disponible"}`,
+    `Email: ${isRealEmail ? knownEmail : "NO DISPONIBLE — pedíselo antes de agendar"}`,
+    `Teléfono: +${cleanPhone}`,
+    `Ocupación: ${ctxNow?.occupation || "no especificada"}`,
+  ];
+  const missingForBooking: string[] = [];
+  if (!isRealEmail) missingForBooking.push("email válido");
+  if (!knownName) missingForBooking.push("nombre completo");
+  const dataStatus = `[CONTEXTO INTERNO — Datos del prospecto:\n${dataStatusLines.join("\n")}\n${missingForBooking.length ? `⚠️ Falta para agendar: ${missingForBooking.join(", ")}.` : "✅ Tenés todos los datos para agendar."}]`;
+
   let contextPrefix = "";
   if (chatHistory.length === 0 && ctx) {
-    // First message — inject context
-    contextPrefix = `[CONTEXTO INTERNO - NO mostrar al usuario: La persona se llama "${ctx.name || senderName || "desconocido"}", su ocupación es "${ctx.occupation || "no especificada"}", descargó el recurso "${ctx.resourceTitle || "recurso"}". Su email es ${ctx.email || "no disponible"}. Este es su PRIMER mensaje respondiendo a tu mensaje automatizado inicial.]\n\n`;
+    // First message — fuller context for rapport
+    contextPrefix = `[CONTEXTO INTERNO - NO mostrar al usuario: La persona se llama "${knownName || "desconocido"}", su ocupación es "${ctxNow?.occupation || "no especificada"}", descargó el recurso "${ctxNow?.resourceTitle || "recurso"}". Su email es ${knownEmail || "no disponible"}. Este es su PRIMER mensaje respondiendo a tu mensaje automatizado inicial.]\n\n${dataStatus}\n\n`;
+  } else {
+    contextPrefix = `${dataStatus}\n\n`;
   }
 
   // 5.5. Load available audio snippets for the prompt
@@ -380,23 +419,51 @@ export async function processIncomingMessage(
     }
   }
 
+  // Persist any captured name/email from qualification_data into leadContext
+  // so future messages have it and so BOOK_SLOT can use it.
+  const qd = (agentResponse.qualification_data || {}) as Record<string, unknown>;
+  const capturedEmail = typeof qd.email === "string" && qd.email.match(emailRegex)?.[0] ? qd.email : "";
+  const capturedName = typeof qd.nombre_completo === "string" && qd.nombre_completo.trim().length > 1 ? qd.nombre_completo.trim() : (typeof qd.name === "string" ? qd.name.trim() : "");
+  if (capturedEmail || capturedName) {
+    const merged = {
+      ...(conversation.leadContext as Record<string, string> || {}),
+      ...(capturedEmail ? { email: capturedEmail } : {}),
+      ...(capturedName ? { name: capturedName } : {}),
+    };
+    await db.update(waConversations)
+      .set({ leadContext: merged, updatedAt: new Date() })
+      .where(eq(waConversations.id, conversation.id));
+    conversation = { ...conversation, leadContext: merged };
+  }
+
   // Handle BOOK_SLOT action — create booking on Cal.com
   const bookSlotAction = agentResponse.actions?.find((a) => a.startsWith("BOOK_SLOT:"));
   if (bookSlotAction) {
     const slotTime = bookSlotAction.replace("BOOK_SLOT:", "").trim();
     console.log(`[WA Agent] BOOK_SLOT triggered: ${slotTime} for ${cleanPhone}`);
 
-    // Get attendee info from lead context
-    const ctx = conversation.leadContext as Record<string, string> | null;
-    const attendeeName = ctx?.name || senderName || "Prospecto";
-    const attendeeEmail = ctx?.email || `${cleanPhone}@whatsapp.lead`;
+    // Get attendee info from (possibly just-merged) lead context
+    const bookCtx = conversation.leadContext as Record<string, string> | null;
+    const attendeeName = bookCtx?.name || senderName || "";
+    const attendeeEmail = bookCtx?.email || "";
     const attendeePhone = `+${cleanPhone}`;
+    const hasRealEmail = attendeeEmail && emailRegex.test(attendeeEmail) && !attendeeEmail.endsWith("@whatsapp.lead");
 
-    const bookingResult = await createBooking(slotTime, {
-      name: attendeeName,
-      email: attendeeEmail,
-      phoneNumber: attendeePhone,
-    });
+    if (!hasRealEmail || !attendeeName) {
+      // Abort booking — ask for missing data instead of creating with fake email
+      console.warn(`[WA Agent] BOOK_SLOT aborted, missing data. email=${attendeeEmail || "(none)"} name=${attendeeName || "(none)"}`);
+      const need: string[] = [];
+      if (!hasRealEmail) need.push("tu mail");
+      if (!attendeeName) need.push("tu nombre completo");
+      finalMessage = `Bárbaro, fijate que me pasés ${need.join(" y ")} así te mando la invitación de la reunión 🙌`;
+      agentResponse.stage = "booking";
+      // Store and return early-ish — fall through to send the message
+    } else {
+      const bookingResult = await createBooking(slotTime, {
+        name: attendeeName,
+        email: attendeeEmail,
+        phoneNumber: attendeePhone,
+      });
 
     if (bookingResult.success) {
       console.log(`[WA Agent] Booking created: ${bookingResult.uid}`);
@@ -459,6 +526,7 @@ export async function processIncomingMessage(
       console.error("[WA Agent] Booking failed:", bookingResult.error);
       // Fallback: send Cal.com link
       finalMessage += "\n\nPerdón, tuve un problemita con la agenda. Te paso el link directo para que puedas agendar: https://cal.com/adrianortiz/llamada";
+    }
     }
   }
 

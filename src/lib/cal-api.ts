@@ -11,13 +11,13 @@
  */
 
 const CAL_BASE = "https://api.cal.com/v2";
-const CAL_API_VERSION = "2024-08-13";
 
-function getHeaders(): Record<string, string> {
+function getHeaders(endpoint: "slots" | "bookings" = "slots"): Record<string, string> {
   const apiKey = process.env.CAL_API_KEY;
+  const version = endpoint === "bookings" ? "2024-08-13" : "2024-09-04";
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "cal-api-version": CAL_API_VERSION,
+    "cal-api-version": version,
   };
   if (apiKey) {
     headers["Authorization"] = `Bearer ${apiKey}`;
@@ -60,15 +60,19 @@ export async function getAvailableSlots(
   timeZone?: string
 ): Promise<{ slots: CalSlotsResponse; error?: string }> {
   const eventTypeId = process.env.CAL_EVENT_TYPE_ID;
-  if (!eventTypeId) {
-    return { slots: {}, error: "CAL_EVENT_TYPE_ID not configured" };
-  }
+  const username = process.env.CAL_USERNAME || "adrianortiz";
+  const eventSlug = process.env.CAL_EVENT_SLUG || "llamada";
 
   const params = new URLSearchParams({
-    eventTypeId,
     start: startDate,
     end: endDate,
   });
+  if (eventTypeId) {
+    params.set("eventTypeId", eventTypeId);
+  } else {
+    params.set("eventTypeSlug", eventSlug);
+    params.set("username", username);
+  }
   if (timeZone) {
     params.set("timeZone", timeZone);
   }
@@ -76,7 +80,7 @@ export async function getAvailableSlots(
   try {
     const res = await fetch(`${CAL_BASE}/slots?${params.toString()}`, {
       method: "GET",
-      headers: getHeaders(),
+      headers: getHeaders("slots"),
     });
 
     if (!res.ok) {
@@ -86,8 +90,19 @@ export async function getAvailableSlots(
     }
 
     const data = await res.json();
-    // Cal.com v2 returns { status: "success", data: { slots: { "2026-05-01": [{time: "..."}] } } }
-    const slots = data?.data?.slots || {};
+    // Cal.com v2 (api-version 2024-09-04) returns:
+    //   { status: "success", data: { "2026-05-01": [{start: "..."}] } }
+    // older shape: { data: { slots: { "2026-05-01": [{time: "..."}] } } }
+    const raw = data?.data?.slots || data?.data || {};
+
+    // Normalize: each slot is { time: ISO } regardless of upstream shape (start | time)
+    const slots: CalSlotsResponse = {};
+    for (const [dateKey, daySlots] of Object.entries(raw)) {
+      if (!Array.isArray(daySlots)) continue;
+      slots[dateKey] = daySlots
+        .map((s: { time?: string; start?: string }) => ({ time: s.time || s.start || "" }))
+        .filter((s) => !!s.time);
+    }
     return { slots };
   } catch (err) {
     console.error("[Cal API] Network error fetching slots:", err);
@@ -180,15 +195,17 @@ export async function getNextAvailableDays(
   });
 
   const lines: string[] = [];
+  const cutoff = Date.now() + 60 * 60 * 1000; // ignore slots <1h from now
 
   for (const [dateKey, daySlots] of Object.entries(slots)) {
-    if (daySlots.length === 0) continue;
+    const futureSlots = daySlots.filter((s) => new Date(s.time).getTime() >= cutoff);
+    if (futureSlots.length === 0) continue;
 
-    const firstSlotDate = new Date(daySlots[0].time);
+    const firstSlotDate = new Date(futureSlots[0].time);
     const dayLabel = dayFormatter.format(firstSlotDate);
-    const times = daySlots.map((s) => timeFormatter.format(new Date(s.time)));
+    const times = futureSlots.map((s) => timeFormatter.format(new Date(s.time)));
 
-    slotsByDate[dateKey] = daySlots.map((s) => s.time);
+    slotsByDate[dateKey] = futureSlots.map((s) => s.time);
     lines.push(`📅 *${capitalize(dayLabel)}*: ${times.join(", ")} hs`);
   }
 
@@ -250,7 +267,7 @@ export async function createBooking(
   try {
     const res = await fetch(`${CAL_BASE}/bookings`, {
       method: "POST",
-      headers: getHeaders(),
+      headers: getHeaders("bookings"),
       body: JSON.stringify(body),
     });
 
