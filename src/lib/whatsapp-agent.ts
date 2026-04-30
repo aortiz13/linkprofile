@@ -522,7 +522,8 @@ Reglas estrictas:
       // Validate the slot is actually available BEFORE calling Cal.com.
       // Catches both LLM-hallucinated timestamps and real races where the
       // slot got taken between display and booking.
-      const slotIsValid = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(slotTime)
+      // Accept ISO with optional milliseconds and either Z or ±HH:MM offset.
+      const slotIsValid = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(slotTime)
         ? await isSlotAvailable(slotTime)
         : false;
 

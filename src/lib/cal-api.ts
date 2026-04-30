@@ -320,6 +320,11 @@ export async function getThreeSlotsForDate(
 /**
  * Verifies that a given UTC slot is currently in Cal.com's availability.
  * Use right before booking to catch races and hallucinated timestamps.
+ *
+ * Compares by timestamp (Date.getTime()) rather than string equality so that
+ * cosmetic differences (milliseconds, timezone offset notation) don't cause
+ * false negatives — e.g. "2026-05-01T16:00:00Z" and "2026-05-01T16:00:00.000Z"
+ * resolve to the same instant.
  */
 export async function isSlotAvailable(
   slotTime: string,
@@ -327,16 +332,28 @@ export async function isSlotAvailable(
 ): Promise<boolean> {
   const date = slotTime.split("T")[0];
   if (!date) return false;
+  const target = new Date(slotTime).getTime();
+  if (Number.isNaN(target)) return false;
+
   const { slots: byDate, error } = await getAvailableSlots(
     `${date}T00:00:00Z`,
     `${date}T23:59:59Z`,
     timeZone
   );
   if (error) return false;
+
+  const available: string[] = [];
   for (const daySlots of Object.values(byDate)) {
-    if (daySlots.some((s) => s.time === slotTime)) return true;
+    for (const s of daySlots) available.push(s.time);
   }
-  return false;
+
+  const found = available.some((t) => new Date(t).getTime() === target);
+  if (!found) {
+    console.warn(
+      `[Cal API] Slot ${slotTime} not in availability. Day had: ${available.join(", ") || "(none)"}`
+    );
+  }
+  return found;
 }
 
 // ─── Create Booking ──────────────────────────────────────────────────────────
