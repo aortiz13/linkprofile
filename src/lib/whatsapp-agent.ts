@@ -20,7 +20,11 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { sendWhatsAppMessage, sendWhatsAppAudio } from "@/lib/evolution-api";
 import { cancelNoReplyFollowups, resetNoReplyCount, scheduleNoReplyFollowups } from "@/lib/no-reply-followups";
-import { getNextAvailableDays, getFormattedSlotsForDate, createBooking } from "@/lib/cal-api";
+import {
+  createBooking,
+  getThreeSlotsForDate,
+  isSlotAvailable,
+} from "@/lib/cal-api";
 import crypto from "crypto";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -107,8 +111,8 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - **value_delivery**: Compartí un insight relevante basado en lo que aprendiste de la persona. Demostrá tu expertise con un caso propio. Este paso es OBLIGATORIO antes de ofrecer el link.
 - **link_offer**: SOLO después de haber pasado por discovery + qualification + value_delivery. Ofrecé la asesoría como paso natural. Incluí "SEND_LINK" en actions. Esto le manda el link con la info de tus asesorías.
 - **followup**: Si ya hicieron click en el link, preguntá qué les pareció.
-- **closing**: Consolidá el interés. Si la persona tiene dudas, resolvelás con confianza. Cuando sientas que la persona está lista para dar el paso, invitala a agendar una reunión con vos para evaluar su caso. Incluí "CHECK_AVAILABILITY" en actions para consultar tu agenda.
-- **booking**: El sistema te va a inyectar los horarios disponibles. Mostralos de forma natural y preguntale cuál le queda mejor. Cuando elija un horario, incluí "BOOK_SLOT:YYYY-MM-DDTHH:mm:ssZ" en actions con el horario UTC exacto del slot elegido.
+- **closing**: Consolidá el interés. Si la persona tiene dudas, resolvelás con confianza. Cuando sientas que la persona está lista para dar el paso, invitala a agendar una reunión con vos para evaluar su caso. Acá NO consultes la agenda todavía — primero preguntale qué día le viene bien.
+- **booking**: La persona ya quiere agendar. Si todavía no sabés qué día prefiere, preguntáselo (un solo día, no tires opciones de aire). Cuando te diga un día (o un día + hora aproximada), incluí "CHECK_DAY:YYYY-MM-DD" en actions con la fecha real (calculada usando la fecha de hoy del CONTEXTO TEMPORAL). El sistema te va a inyectar 3 horarios disponibles reales para ese día (uno temprano, uno medio, uno tarde). Mostralos naturalmente y preguntale cuál le queda mejor. Cuando elija UNO de esos 3, incluí "BOOK_SLOT:" seguido del horario UTC EXACTO que el sistema te dio.
 - **booked**: La reunión ya fue agendada. Confirmale con calidez y despedite. Ya no necesitás hacer nada más.
 - **escalation**: Si preguntan por precios, respondé que te encantaría verlo personalmente e incluí "ESCALATE" en actions.
 - **inactive**: Si la persona dice que NO quiere ayuda o pide que no le escribas más, incluí "OPT_OUT" en actions.
@@ -120,12 +124,8 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - Si la conversación fluye bien y sentís que es el momento, envialo. No lo fuerces pero tampoco lo retrases innecesariamente.
 - El link de asesorías es para que VEA la info. NO es para agendar. Para agendar, usá CHECK_AVAILABILITY + BOOK_SLOT.
 
-# REGLAS SOBRE EL AGENDAMIENTO DE REUNIONES
+# REGLAS SOBRE EL AGENDAMIENTO DE REUNIONES (FLUJO OBLIGATORIO)
 - SOLO ofrecé agendar una reunión DESPUÉS de haber enviado el link de asesorías y la persona haber mostrado interés.
-- Cuando la persona quiere agendar, incluí "CHECK_AVAILABILITY" en actions. El sistema te va a devolver los horarios disponibles como contexto.
-- Mostrá los horarios de forma natural y corta: "Mirá, tengo estos horarios esta semana: Lunes 10:00, Martes 14:00..." etc.
-- Cuando la persona elige un horario, incluí "BOOK_SLOT:" seguido del horario UTC exacto del slot. Ejemplo: "BOOK_SLOT:2026-05-01T13:00:00Z".
-- Si la persona dice un día pero no un horario exacto, mostrá los horarios de ese día y preguntale cuál prefiere.
 - Si la persona pide agendar ANTES de ver las asesorías, primero enviá el link (SEND_LINK) y después ofrecé agendar.
 
 # DATOS NECESARIOS ANTES DE AGENDAR (OBLIGATORIO)
@@ -134,6 +134,25 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - Si la persona te pasa un email o un nombre completo en su mensaje, capturalos en qualification_data como "email" y "nombre_completo". Ejemplo: qualification_data: { "email": "juan@gmail.com", "nombre_completo": "Juan Pérez" }
 - NUNCA inventes un email. Si no lo tenés escrito por el prospecto en la conversación, pedílo.
 - Si ya tenés el email pero no el nombre, podés agendar igual usando el nombre del contexto.
+
+# FLUJO DE 4 PASOS PARA AGENDAR (OBLIGATORIO una vez tenés nombre + email)
+
+PASO 1 — Preguntá el día:
+- Cuando la persona acepte agendar y todavía no haya dicho un día, preguntale qué día le viene bien. NO tires horarios de aire ni inventes disponibilidad. Una pregunta corta: "Bárbaro. ¿Qué día te queda mejor?"
+
+PASO 2 — Consultá la agenda con CHECK_DAY:
+- Cuando la persona te diga un día (ej: "el lunes", "mañana", "el 5"), convertilo a YYYY-MM-DD usando la fecha de hoy del CONTEXTO TEMPORAL al final del prompt.
+- Incluí "CHECK_DAY:YYYY-MM-DD" en actions. El sistema te va a inyectar como contexto interno 3 horarios disponibles reales para ese día (temprano, medio, tarde).
+- Si ese día no tiene disponibilidad, el sistema te va a devolver el día siguiente con disponibilidad — usá ese día y avisalo naturalmente.
+
+PASO 3 — Mostrá las 3 opciones que el sistema te dio:
+- Mostralas tal cual (NO inventes ni alteres horarios). Ejemplo: "Mirá, ese día tengo 9:00, 13:00 o 17:30. ¿Cuál te queda mejor?"
+- Si la persona dice que ningún horario de ese día le sirve, llamá a CHECK_DAY con el día siguiente.
+
+PASO 4 — Reservá con BOOK_SLOT:
+- Cuando la persona elija UNO de los 3 horarios que mostraste, incluí "BOOK_SLOT:" seguido del horario UTC EXACTO que el sistema te dio para ese slot. Ejemplo: "BOOK_SLOT:2026-05-04T12:00:00Z".
+- PROHIBIDO inventar timestamps UTC. Solo usá los que el sistema te inyectó en el paso 2/3. Si tenés dudas, llamá a CHECK_DAY de nuevo.
+- En el mensaje de BOOK_SLOT NO confirmes la reunión todavía — el sistema te va a re-llamar después con la confirmación real. Decí algo neutro tipo "Dale, agendando ese horario, dame un segundo".
 
 # REGLAS CRÍTICAS GENERALES
 - NUNCA reveles que sos una IA o un bot. Sos Adrian, punto.
@@ -170,7 +189,7 @@ Respondé SIEMPRE en formato JSON válido:
 
 - qualification_score: de 0 a 100 basado en las señales recogidas
 - qualification_data: { "motivacion": "...", "usa_ia": true/false, "herramientas": [...], "objetivo": "...", "equipo": "...", "desafio": "..." }
-- actions: "SEND_LINK", "CHECK_AVAILABILITY", "BOOK_SLOT:iso_time", "ESCALATE", "SEND_AUDIO:trigger_key", "OPT_OUT"
+- actions: "SEND_LINK", "CHECK_DAY:YYYY-MM-DD", "BOOK_SLOT:iso_time_utc", "ESCALATE", "SEND_AUDIO:trigger_key", "OPT_OUT"
 
 IMPORTANTE: "message" debe ser SOLO el texto del WhatsApp. Sin JSON ni formato técnico.`;
 
@@ -303,9 +322,14 @@ export async function processIncomingMessage(
       .join("\n")}`;
   }
 
+  // Temporal context — the LLM needs today's date to convert "el lunes" / "mañana"
+  // into a concrete YYYY-MM-DD for CHECK_DAY actions.
+  const todayContextSection = buildTodayContextSection();
+  const systemPromptFull = SYSTEM_PROMPT + audioPromptSection + todayContextSection;
+
   // 6. Call OpenAI
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT + audioPromptSection },
+    { role: "system", content: systemPromptFull },
     ...chatHistory,
     { role: "user", content: contextPrefix + messageText },
   ];
@@ -376,22 +400,53 @@ export async function processIncomingMessage(
     }
   }
 
-  // Handle CHECK_AVAILABILITY action — fetch Cal.com slots and re-prompt
-  if (agentResponse.actions?.includes("CHECK_AVAILABILITY")) {
-    console.log(`[WA Agent] CHECK_AVAILABILITY triggered for ${cleanPhone}`);
+  // Handle CHECK_DAY action — fetch 3 spread slots for the requested day
+  // (or next available day) and re-prompt the LLM to present them naturally.
+  // We also accept the legacy CHECK_AVAILABILITY as a shortcut for "tomorrow".
+  const checkDayAction = agentResponse.actions?.find((a) => a.startsWith("CHECK_DAY:"));
+  const legacyCheckAvailability = agentResponse.actions?.includes("CHECK_AVAILABILITY");
+  if (checkDayAction || legacyCheckAvailability) {
+    const requestedDate = checkDayAction
+      ? checkDayAction.replace("CHECK_DAY:", "").trim()
+      : tomorrowDateAR();
 
-    const { summary, error } = await getNextAvailableDays(7);
+    console.log(`[WA Agent] CHECK_DAY triggered for ${cleanPhone} | requested: ${requestedDate}`);
 
-    if (error) {
-      console.error("[WA Agent] Cal.com availability error:", error);
-      // Fallback: just send the LLM's message without availability
-      finalMessage += "\n\n(No pude consultar mi agenda en este momento, te mando el link para que agendes directo: https://cal.com/adrianortiz/llamada)";
+    const result = await getThreeSlotsForDate(requestedDate);
+
+    if (result.error || result.slots.length === 0) {
+      console.error("[WA Agent] Cal.com no slots / error:", result.error);
+      finalMessage +=
+        "\n\n(Estoy con problemas para ver mi agenda en este momento, te paso el link directo para que elijas vos: https://cal.com/adrianortiz/llamada)";
     } else {
-      // Re-invoke LLM with availability context so it presents slots naturally
-      const availabilityContext = `[CONTEXTO INTERNO — Horarios disponibles de tu agenda de Cal.com para la próxima semana:\n${summary}\n\nMostrá estos horarios de forma natural y preguntale cuál le queda mejor. Cuando elija, incluí "BOOK_SLOT:horario_utc" en actions.]`;
+      const slotsBlock = result.slots
+        .map((s) => `- ${s.shortLabel}  (UTC ISO: ${s.time})`)
+        .join("\n");
+
+      const dayHumanFmt = new Intl.DateTimeFormat("es-AR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "America/Argentina/Buenos_Aires",
+      });
+      const dayHuman = dayHumanFmt.format(new Date(`${result.date}T12:00:00Z`));
+
+      const walkedNote =
+        result.walkedForwardDays > 0
+          ? `\nNOTA: el día solicitado (${result.requestedDate}) no tenía disponibilidad. Estás ofreciendo el primer día con espacio: ${result.date}. Avisalo brevemente y con naturalidad.`
+          : "";
+
+      const availabilityContext = `[CONTEXTO INTERNO — Horarios reales disponibles de la agenda de Cal.com para ${dayHuman} (${result.date}):
+${slotsBlock}
+
+Reglas estrictas:
+1. Mostrale al usuario las 3 opciones (en hora local de Argentina) y preguntale cuál le queda mejor. NO inventes horarios distintos a estos.
+2. Cuando el usuario elija UNO, en tu próxima respuesta incluí "BOOK_SLOT:" con el "UTC ISO" EXACTO de ese slot (no la hora local).
+3. Si el usuario dice que ningún horario de este día le sirve, en tu próxima respuesta incluí "CHECK_DAY:YYYY-MM-DD" del día siguiente.
+4. En este turno NO incluyas BOOK_SLOT — solo presentás opciones.${walkedNote}]`;
 
       const rebuildMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: "system", content: SYSTEM_PROMPT + audioPromptSection },
+        { role: "system", content: systemPromptFull },
         ...chatHistory,
         { role: "user", content: contextPrefix + messageText },
         { role: "assistant", content: JSON.stringify(agentResponse) },
@@ -410,11 +465,16 @@ export async function processIncomingMessage(
         const rebuildResponse: AgentResponse = JSON.parse(rebuildText);
         finalMessage = rebuildResponse.message;
         agentResponse.stage = rebuildResponse.stage || "booking";
-        agentResponse.actions = [...(agentResponse.actions || []), ...(rebuildResponse.actions || [])];
-        // Remove CHECK_AVAILABILITY from actions to avoid infinite loop
-        agentResponse.actions = agentResponse.actions.filter((a) => a !== "CHECK_AVAILABILITY");
+        agentResponse.actions = [
+          ...(agentResponse.actions || []),
+          ...(rebuildResponse.actions || []),
+        ];
+        // Strip CHECK_DAY / CHECK_AVAILABILITY from actions to avoid loops in this turn
+        agentResponse.actions = agentResponse.actions.filter(
+          (a) => a !== "CHECK_AVAILABILITY" && !a.startsWith("CHECK_DAY:")
+        );
       } catch {
-        console.error("[WA Agent] Failed to parse availability rebuild:", rebuildText);
+        console.error("[WA Agent] Failed to parse CHECK_DAY rebuild:", rebuildText);
       }
     }
   }
@@ -436,7 +496,7 @@ export async function processIncomingMessage(
     conversation = { ...conversation, leadContext: merged };
   }
 
-  // Handle BOOK_SLOT action — create booking on Cal.com
+  // Handle BOOK_SLOT action — guard on contact data, validate slot, then book.
   const bookSlotAction = agentResponse.actions?.find((a) => a.startsWith("BOOK_SLOT:"));
   if (bookSlotAction) {
     const slotTime = bookSlotAction.replace("BOOK_SLOT:", "").trim();
@@ -457,15 +517,27 @@ export async function processIncomingMessage(
       if (!attendeeName) need.push("tu nombre completo");
       finalMessage = `Bárbaro, fijate que me pasés ${need.join(" y ")} así te mando la invitación de la reunión 🙌`;
       agentResponse.stage = "booking";
-      // Store and return early-ish — fall through to send the message
+      // Fall through to send the message
     } else {
-      const bookingResult = await createBooking(slotTime, {
-        name: attendeeName,
-        email: attendeeEmail,
-        phoneNumber: attendeePhone,
-      });
+      // Validate the slot is actually available BEFORE calling Cal.com.
+      // Catches both LLM-hallucinated timestamps and real races where the
+      // slot got taken between display and booking.
+      const slotIsValid = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(slotTime)
+        ? await isSlotAvailable(slotTime)
+        : false;
 
-    if (bookingResult.success) {
+      let bookingResult: Awaited<ReturnType<typeof createBooking>> | null = null;
+      if (slotIsValid) {
+        bookingResult = await createBooking(slotTime, {
+          name: attendeeName,
+          email: attendeeEmail,
+          phoneNumber: attendeePhone,
+        });
+      } else {
+        console.error(`[WA Agent] BOOK_SLOT rejected: ${slotTime} not in Cal availability`);
+      }
+
+      if (bookingResult?.success) {
       console.log(`[WA Agent] Booking created: ${bookingResult.uid}`);
 
       // Format the confirmed time for the user
@@ -485,7 +557,7 @@ export async function processIncomingMessage(
       const bookingContext = `[CONTEXTO INTERNO — La reunión fue agendada exitosamente en Cal.com:\n📅 Fecha: ${formattedTime} hs (Argentina)\n✅ Confirmación enviada al email: ${attendeeEmail}\n${bookingResult.meetUrl ? `📹 Link de la reunión: ${bookingResult.meetUrl}` : ""}\n\nConfirmale al prospecto que la reunión está agendada. Mencioná la fecha y hora. Si hay link de videollamada, compartilo. Stage: "booked".]`;
 
       const confirmMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: "system", content: SYSTEM_PROMPT + audioPromptSection },
+        { role: "system", content: systemPromptFull },
         ...chatHistory,
         { role: "user", content: contextPrefix + messageText },
         { role: "assistant", content: JSON.stringify(agentResponse) },
@@ -523,9 +595,68 @@ export async function processIncomingMessage(
         `📅 *REUNIÓN AGENDADA*\n\n👤 ${attendeeName}\n📱 +${cleanPhone}\n📧 ${attendeeEmail}\n🕐 ${formattedTime} hs\n${bookingResult.meetUrl ? `📹 ${bookingResult.meetUrl}` : ""}`
       );
     } else {
-      console.error("[WA Agent] Booking failed:", bookingResult.error);
-      // Fallback: send Cal.com link
-      finalMessage += "\n\nPerdón, tuve un problemita con la agenda. Te paso el link directo para que puedas agendar: https://cal.com/adrianortiz/llamada";
+      const failureReason = bookingResult?.error || "slot no disponible / formato inválido";
+      console.error("[WA Agent] Booking failed:", failureReason, "| slot:", slotTime);
+
+      // The agent's pre-booking message likely already said "te agendo..." —
+      // we discard it and re-prompt the LLM with fresh availability for the
+      // same day, so the user gets ONE coherent message offering real slots.
+      const failureDate = slotTime.split("T")[0] || tomorrowDateAR();
+      const fallback = await getThreeSlotsForDate(failureDate);
+
+      if (!fallback.error && fallback.slots.length > 0) {
+        const slotsBlock = fallback.slots
+          .map((s) => `- ${s.shortLabel}  (UTC ISO: ${s.time})`)
+          .join("\n");
+        const dayHumanFmt = new Intl.DateTimeFormat("es-AR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "America/Argentina/Buenos_Aires",
+        });
+        const dayHuman = dayHumanFmt.format(new Date(`${fallback.date}T12:00:00Z`));
+
+        const failureContext = `[CONTEXTO INTERNO — El horario que el usuario eligió YA NO está disponible en mi agenda (otra reunión lo ocupó o el horario no era válido). NO confirmes la reunión. NO digas "te agendo" ni "ya te agendé". Pedí disculpas brevemente y ofrecé estos 3 horarios reales para ${dayHuman} (${fallback.date}):
+${slotsBlock}
+
+Reglas:
+1. Mostrale las opciones en hora local (Argentina) y preguntale cuál prefiere.
+2. NO incluyas BOOK_SLOT en este turno — solo ofrecés las nuevas opciones.
+3. Cuando elija una, en el siguiente turno usá BOOK_SLOT con el UTC ISO exacto.
+4. Stage: "booking" (NO "booked").]`;
+
+        const retryMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+          { role: "system", content: systemPromptFull },
+          ...chatHistory,
+          { role: "user", content: contextPrefix + messageText },
+          { role: "assistant", content: JSON.stringify(agentResponse) },
+          { role: "user", content: failureContext },
+        ];
+
+        const retryCompletion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: retryMessages,
+          temperature: 0.85,
+          response_format: { type: "json_object" },
+        });
+
+        const retryText = retryCompletion.choices[0]?.message?.content || "";
+        try {
+          const retryResponse: AgentResponse = JSON.parse(retryText);
+          finalMessage = retryResponse.message;
+          agentResponse.stage = "booking";
+        } catch {
+          finalMessage = `Uy, ese horario se me ocupó recién. Para ${dayHuman} tengo ${fallback.slots
+            .map((s) => s.shortLabel)
+            .join(", ")}. ¿Cuál te queda mejor?`;
+          agentResponse.stage = "booking";
+        }
+      } else {
+        // Hard fallback: no availability at all — give them the link.
+        finalMessage =
+          "Uy, se me complicó la agenda en este momento. Te paso el link directo para que elijas el horario que mejor te quede: https://cal.com/adrianortiz/llamada";
+        agentResponse.stage = "booking";
+      }
     }
     }
   }
@@ -917,4 +1048,48 @@ async function sendNoClickNudge(conversationId: string, phone: string) {
 
     console.log(`[WA Agent] No-click nudge sent to ${phone}`);
   }
+}
+
+// ─── Date helpers (Argentina-aware) ──────────────────────────────────────────
+
+const AR_TZ = "America/Argentina/Buenos_Aires";
+
+/** Returns today's date in Argentina as "YYYY-MM-DD". */
+function todayDateAR(): string {
+  // en-CA emits ISO-style YYYY-MM-DD when given the right options
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: AR_TZ,
+  });
+  return fmt.format(new Date());
+}
+
+/** Returns tomorrow's date in Argentina as "YYYY-MM-DD". */
+function tomorrowDateAR(): string {
+  const today = todayDateAR();
+  const d = new Date(`${today}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().split("T")[0];
+}
+
+/**
+ * Builds a small system-prompt section telling the LLM today's date so it can
+ * resolve relative day references ("el lunes", "mañana") into a concrete
+ * YYYY-MM-DD for CHECK_DAY actions.
+ */
+function buildTodayContextSection(): string {
+  const today = todayDateAR();
+  const humanFmt = new Intl.DateTimeFormat("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: AR_TZ,
+  });
+  const humanToday = humanFmt.format(new Date(`${today}T12:00:00Z`));
+  return `\n\n# CONTEXTO TEMPORAL
+Hoy es ${humanToday} (${today}, hora de Argentina).
+Cuando el usuario diga un día relativo ("hoy", "mañana", "el lunes", "el viernes próximo"), convertilo a YYYY-MM-DD usando esta fecha como referencia, y mandalo en "CHECK_DAY:YYYY-MM-DD".`;
 }

@@ -222,6 +222,123 @@ export async function getNextAvailableDays(
   };
 }
 
+// ─── Three-slot picker (early / mid / late for a given day) ─────────────────
+
+export interface ThreeSlotPick {
+  time: string;       // ISO 8601 UTC — pass this verbatim to BOOK_SLOT
+  label: string;      // "lunes 4 de mayo, 10:00" (Argentina time)
+  shortLabel: string; // "10:00" (Argentina time)
+}
+
+export interface ThreeSlotsResult {
+  date: string;            // YYYY-MM-DD actually used (may differ from requested)
+  requestedDate: string;   // YYYY-MM-DD that was originally asked for
+  walkedForwardDays: number; // 0 = picks are for the requested date; >0 = we advanced
+  slots: ThreeSlotPick[];
+  error?: string;
+}
+
+/**
+ * Returns up to 3 spread-out slots (earliest, middle, latest) for the requested
+ * day. If the day has no availability, walks forward day by day (up to
+ * `maxLookaheadDays`) and returns the first day with availability.
+ */
+export async function getThreeSlotsForDate(
+  requestedDate: string, // "YYYY-MM-DD"
+  timeZone = "America/Argentina/Buenos_Aires",
+  maxLookaheadDays = 7
+): Promise<ThreeSlotsResult> {
+  let cursor = requestedDate;
+  for (let walked = 0; walked < maxLookaheadDays; walked++) {
+    const startISO = `${cursor}T00:00:00Z`;
+    const endISO = `${cursor}T23:59:59Z`;
+    const { slots: byDate, error } = await getAvailableSlots(startISO, endISO, timeZone);
+
+    if (error) {
+      return { date: cursor, requestedDate, walkedForwardDays: walked, slots: [], error };
+    }
+
+    const allTimes: string[] = [];
+    for (const daySlots of Object.values(byDate)) {
+      for (const s of daySlots) allTimes.push(s.time);
+    }
+    allTimes.sort();
+
+    if (allTimes.length > 0) {
+      const picks: string[] =
+        allTimes.length <= 3
+          ? allTimes.slice()
+          : [
+              allTimes[0],
+              allTimes[Math.floor(allTimes.length / 2)],
+              allTimes[allTimes.length - 1],
+            ];
+
+      const fullFmt = new Intl.DateTimeFormat("es-AR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone,
+        hour12: false,
+      });
+      const shortFmt = new Intl.DateTimeFormat("es-AR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone,
+        hour12: false,
+      });
+
+      return {
+        date: cursor,
+        requestedDate,
+        walkedForwardDays: walked,
+        slots: picks.map((t) => ({
+          time: t,
+          label: fullFmt.format(new Date(t)),
+          shortLabel: shortFmt.format(new Date(t)),
+        })),
+      };
+    }
+
+    // Advance cursor by one calendar day (UTC arithmetic is fine for YYYY-MM-DD)
+    const d = new Date(`${cursor}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 1);
+    cursor = d.toISOString().split("T")[0];
+  }
+
+  return {
+    date: cursor,
+    requestedDate,
+    walkedForwardDays: maxLookaheadDays,
+    slots: [],
+    error: "Sin disponibilidad en los próximos días",
+  };
+}
+
+/**
+ * Verifies that a given UTC slot is currently in Cal.com's availability.
+ * Use right before booking to catch races and hallucinated timestamps.
+ */
+export async function isSlotAvailable(
+  slotTime: string,
+  timeZone = "America/Argentina/Buenos_Aires"
+): Promise<boolean> {
+  const date = slotTime.split("T")[0];
+  if (!date) return false;
+  const { slots: byDate, error } = await getAvailableSlots(
+    `${date}T00:00:00Z`,
+    `${date}T23:59:59Z`,
+    timeZone
+  );
+  if (error) return false;
+  for (const daySlots of Object.values(byDate)) {
+    if (daySlots.some((s) => s.time === slotTime)) return true;
+  }
+  return false;
+}
+
 // ─── Create Booking ──────────────────────────────────────────────────────────
 
 /**
