@@ -284,7 +284,7 @@ export default function LeadMagnetsPage() {
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          style={{ maxHeight: "90vh", width: "100%", maxWidth: 540, display: "flex", flexDirection: "column", borderRadius: 16, border: "1px solid var(--border)", background: "var(--bg-surface)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+          style={{ maxHeight: "min(90vh, 90dvh)", width: "100%", maxWidth: 540, display: "flex", flexDirection: "column", borderRadius: 16, border: "1px solid var(--border)", background: "var(--bg-surface)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden" }}
               >
                 <div className="shrink-0 bg-[var(--bg-surface)] border-b border-[var(--border)] p-5 flex items-center justify-between rounded-t-2xl">
                   <h2 className="text-lg font-bold text-[var(--text-primary)]">
@@ -295,7 +295,7 @@ export default function LeadMagnetsPage() {
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4" style={{ minHeight: 0 }}>
                   {/* Slug */}
                   <div>
                     <label className="text-xs font-medium text-[var(--text-primary)] mb-1 block">URL del formulario (slug)</label>
