@@ -20,6 +20,7 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { sendWhatsAppMessage, sendWhatsAppAudio } from "@/lib/evolution-api";
 import { cancelNoReplyFollowups, resetNoReplyCount, scheduleNoReplyFollowups } from "@/lib/no-reply-followups";
+import { getNextAvailableDays, getFormattedSlotsForDate, createBooking } from "@/lib/cal-api";
 import crypto from "crypto";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -88,8 +89,8 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 1. Conectar y generar rapport genuino
 2. Descubrir POR QUÉ le interesa la IA (motivación real)
 3. Calificar al prospecto con preguntas naturales
-4. En el momento adecuado, compartir tu link de asesorías
-5. Guiarlo a agendar una asesoría personalizada con vos
+4. En el momento adecuado, compartir tu link de asesorías (info sobre qué ofrecés)
+5. Después, si muestra interés en agendar, ofrecerle agendar una reunión directamente
 
 # PREGUNTAS DE CALIFICACIÓN (hacelas de forma natural, no como encuesta)
 - ¿Qué te motivó a descargar el recurso? → Intent signal
@@ -104,17 +105,28 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 - **discovery**: Profundizá en su situación actual. ¿Qué hacen? ¿Cómo usan (o no) la IA? MÍNIMO 2-3 intercambios acá.
 - **qualification**: Hacé las preguntas de calificación de forma natural. MÍNIMO 2-3 intercambios más.
 - **value_delivery**: Compartí un insight relevante basado en lo que aprendiste de la persona. Demostrá tu expertise con un caso propio. Este paso es OBLIGATORIO antes de ofrecer el link.
-- **link_offer**: SOLO después de haber pasado por discovery + qualification + value_delivery. Ofrecé la asesoría como paso natural. Incluí [ENVIAR_LINK].
+- **link_offer**: SOLO después de haber pasado por discovery + qualification + value_delivery. Ofrecé la asesoría como paso natural. Incluí "SEND_LINK" en actions. Esto le manda el link con la info de tus asesorías.
 - **followup**: Si ya hicieron click en el link, preguntá qué les pareció.
-- **closing**: Consolidá el interés y llevá hacia el agendamiento.
-- **escalation**: Si preguntan por precios, respondé que te encantaría verlo personalmente e incluí [ESCALAR].
+- **closing**: Consolidá el interés. Si la persona tiene dudas, resolvelás con confianza. Cuando sientas que la persona está lista para dar el paso, invitala a agendar una reunión con vos para evaluar su caso. Incluí "CHECK_AVAILABILITY" en actions para consultar tu agenda.
+- **booking**: El sistema te va a inyectar los horarios disponibles. Mostralos de forma natural y preguntale cuál le queda mejor. Cuando elija un horario, incluí "BOOK_SLOT:YYYY-MM-DDTHH:mm:ssZ" en actions con el horario UTC exacto del slot elegido.
+- **booked**: La reunión ya fue agendada. Confirmale con calidez y despedite. Ya no necesitás hacer nada más.
+- **escalation**: Si preguntan por precios, respondé que te encantaría verlo personalmente e incluí "ESCALATE" en actions.
 - **inactive**: Si la persona dice que NO quiere ayuda o pide que no le escribas más, incluí "OPT_OUT" en actions.
 
-# REGLAS SOBRE EL LINK
+# REGLAS SOBRE EL LINK DE ASESORÍAS
 - No envíes el link si todavía no sabés qué hace la persona ni qué quiere lograr con IA.
 - El link se envía cuando la persona DEMUESTRA interés real y vos ya le diste valor primero.
 - Si la persona pide el link directamente, envialo sin problema.
 - Si la conversación fluye bien y sentís que es el momento, envialo. No lo fuerces pero tampoco lo retrases innecesariamente.
+- El link de asesorías es para que VEA la info. NO es para agendar. Para agendar, usá CHECK_AVAILABILITY + BOOK_SLOT.
+
+# REGLAS SOBRE EL AGENDAMIENTO DE REUNIONES
+- SOLO ofrecé agendar una reunión DESPUÉS de haber enviado el link de asesorías y la persona haber mostrado interés.
+- Cuando la persona quiere agendar, incluí "CHECK_AVAILABILITY" en actions. El sistema te va a devolver los horarios disponibles como contexto.
+- Mostrá los horarios de forma natural y corta: "Mirá, tengo estos horarios esta semana: Lunes 10:00, Martes 14:00..." etc.
+- Cuando la persona elige un horario, incluí "BOOK_SLOT:" seguido del horario UTC exacto del slot. Ejemplo: "BOOK_SLOT:2026-05-01T13:00:00Z".
+- Si la persona dice un día pero no un horario exacto, mostrá los horarios de ese día y preguntale cuál prefiere.
+- Si la persona pide agendar ANTES de ver las asesorías, primero enviá el link (SEND_LINK) y después ofrecé agendar.
 
 # REGLAS CRÍTICAS GENERALES
 - NUNCA reveles que sos una IA o un bot. Sos Adrian, punto.
@@ -143,7 +155,7 @@ Esta persona descargó un recurso gratuito tuyo y ya recibió un mensaje automat
 Respondé SIEMPRE en formato JSON válido:
 {
   "message": "El mensaje de WhatsApp que vas a enviar",
-  "stage": "greeting|discovery|qualification|value_delivery|link_offer|followup|closing|escalation|inactive",
+  "stage": "greeting|discovery|qualification|value_delivery|link_offer|followup|closing|booking|booked|escalation|inactive",
   "qualification_score": 0,
   "qualification_data": {},
   "actions": []
@@ -151,7 +163,7 @@ Respondé SIEMPRE en formato JSON válido:
 
 - qualification_score: de 0 a 100 basado en las señales recogidas
 - qualification_data: { "motivacion": "...", "usa_ia": true/false, "herramientas": [...], "objetivo": "...", "equipo": "...", "desafio": "..." }
-- actions: "SEND_LINK", "ESCALATE", "SEND_AUDIO:trigger_key", "OPT_OUT"
+- actions: "SEND_LINK", "CHECK_AVAILABILITY", "BOOK_SLOT:iso_time", "ESCALATE", "SEND_AUDIO:trigger_key", "OPT_OUT"
 
 IMPORTANTE: "message" debe ser SOLO el texto del WhatsApp. Sin JSON ni formato técnico.`;
 
@@ -322,6 +334,131 @@ export async function processIncomingMessage(
           console.error("[WA Agent] No-click nudge error:", err);
         }
       }, 10 * 60 * 1000); // 10 minutes
+    }
+  }
+
+  // Handle CHECK_AVAILABILITY action — fetch Cal.com slots and re-prompt
+  if (agentResponse.actions?.includes("CHECK_AVAILABILITY")) {
+    console.log(`[WA Agent] CHECK_AVAILABILITY triggered for ${cleanPhone}`);
+
+    const { summary, error } = await getNextAvailableDays(7);
+
+    if (error) {
+      console.error("[WA Agent] Cal.com availability error:", error);
+      // Fallback: just send the LLM's message without availability
+      finalMessage += "\n\n(No pude consultar mi agenda en este momento, te mando el link para que agendes directo: https://cal.com/adrianortiz/llamada)";
+    } else {
+      // Re-invoke LLM with availability context so it presents slots naturally
+      const availabilityContext = `[CONTEXTO INTERNO — Horarios disponibles de tu agenda de Cal.com para la próxima semana:\n${summary}\n\nMostrá estos horarios de forma natural y preguntale cuál le queda mejor. Cuando elija, incluí "BOOK_SLOT:horario_utc" en actions.]`;
+
+      const rebuildMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        { role: "system", content: SYSTEM_PROMPT + audioPromptSection },
+        ...chatHistory,
+        { role: "user", content: contextPrefix + messageText },
+        { role: "assistant", content: JSON.stringify(agentResponse) },
+        { role: "user", content: availabilityContext },
+      ];
+
+      const rebuildCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: rebuildMessages,
+        temperature: 0.85,
+        response_format: { type: "json_object" },
+      });
+
+      const rebuildText = rebuildCompletion.choices[0]?.message?.content || "";
+      try {
+        const rebuildResponse: AgentResponse = JSON.parse(rebuildText);
+        finalMessage = rebuildResponse.message;
+        agentResponse.stage = rebuildResponse.stage || "booking";
+        agentResponse.actions = [...(agentResponse.actions || []), ...(rebuildResponse.actions || [])];
+        // Remove CHECK_AVAILABILITY from actions to avoid infinite loop
+        agentResponse.actions = agentResponse.actions.filter((a) => a !== "CHECK_AVAILABILITY");
+      } catch {
+        console.error("[WA Agent] Failed to parse availability rebuild:", rebuildText);
+      }
+    }
+  }
+
+  // Handle BOOK_SLOT action — create booking on Cal.com
+  const bookSlotAction = agentResponse.actions?.find((a) => a.startsWith("BOOK_SLOT:"));
+  if (bookSlotAction) {
+    const slotTime = bookSlotAction.replace("BOOK_SLOT:", "").trim();
+    console.log(`[WA Agent] BOOK_SLOT triggered: ${slotTime} for ${cleanPhone}`);
+
+    // Get attendee info from lead context
+    const ctx = conversation.leadContext as Record<string, string> | null;
+    const attendeeName = ctx?.name || senderName || "Prospecto";
+    const attendeeEmail = ctx?.email || `${cleanPhone}@whatsapp.lead`;
+    const attendeePhone = `+${cleanPhone}`;
+
+    const bookingResult = await createBooking(slotTime, {
+      name: attendeeName,
+      email: attendeeEmail,
+      phoneNumber: attendeePhone,
+    });
+
+    if (bookingResult.success) {
+      console.log(`[WA Agent] Booking created: ${bookingResult.uid}`);
+
+      // Format the confirmed time for the user
+      const confirmedDate = new Date(slotTime);
+      const dateFormatter = new Intl.DateTimeFormat("es-AR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour12: false,
+      });
+      const formattedTime = dateFormatter.format(confirmedDate);
+
+      // Re-invoke LLM to confirm the booking naturally
+      const bookingContext = `[CONTEXTO INTERNO — La reunión fue agendada exitosamente en Cal.com:\n📅 Fecha: ${formattedTime} hs (Argentina)\n✅ Confirmación enviada al email: ${attendeeEmail}\n${bookingResult.meetUrl ? `📹 Link de la reunión: ${bookingResult.meetUrl}` : ""}\n\nConfirmale al prospecto que la reunión está agendada. Mencioná la fecha y hora. Si hay link de videollamada, compartilo. Stage: "booked".]`;
+
+      const confirmMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        { role: "system", content: SYSTEM_PROMPT + audioPromptSection },
+        ...chatHistory,
+        { role: "user", content: contextPrefix + messageText },
+        { role: "assistant", content: JSON.stringify(agentResponse) },
+        { role: "user", content: bookingContext },
+      ];
+
+      const confirmCompletion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: confirmMessages,
+        temperature: 0.85,
+        response_format: { type: "json_object" },
+      });
+
+      const confirmText = confirmCompletion.choices[0]?.message?.content || "";
+      try {
+        const confirmResponse: AgentResponse = JSON.parse(confirmText);
+        finalMessage = confirmResponse.message;
+        agentResponse.stage = "booked";
+      } catch {
+        // Fallback: manual confirmation message
+        finalMessage = `Listo, ya te agendé la reunión para el ${formattedTime} hs 🙌${bookingResult.meetUrl ? `\n\n📹 Nos vemos acá: ${bookingResult.meetUrl}` : ""}`;
+        agentResponse.stage = "booked";
+      }
+
+      // Update lead funnel stage
+      if (conversation.leadId) {
+        await db
+          .update(leads)
+          .set({ funnelStage: "reunion_agendada" })
+          .where(eq(leads.id, conversation.leadId));
+      }
+
+      // Notify Adrian about the booking
+      await sendWhatsAppMessage(ADRIAN_PHONE,
+        `📅 *REUNIÓN AGENDADA*\n\n👤 ${attendeeName}\n📱 +${cleanPhone}\n📧 ${attendeeEmail}\n🕐 ${formattedTime} hs\n${bookingResult.meetUrl ? `📹 ${bookingResult.meetUrl}` : ""}`
+      );
+    } else {
+      console.error("[WA Agent] Booking failed:", bookingResult.error);
+      // Fallback: send Cal.com link
+      finalMessage += "\n\nPerdón, tuve un problemita con la agenda. Te paso el link directo para que puedas agendar: https://cal.com/adrianortiz/llamada";
     }
   }
 
