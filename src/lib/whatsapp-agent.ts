@@ -285,6 +285,11 @@ export async function processIncomingMessage(
   const knownEmail = ctxNow?.email || "";
   const isRealEmail = knownEmail && !knownEmail.endsWith("@whatsapp.lead");
 
+  // Resolve the user's locale (timezone + country) once. All times shown to
+  // the user — slot pickers, day labels, booking confirmations — go through
+  // userLocale.tz. Adrian's own notification still uses ADRIAN_TZ.
+  const userLocale = resolveUserLocale(ctxNow?.country, cleanPhone);
+
   // Inject data-status context on every message so LLM knows what's missing
   const dataStatusLines = [
     `Nombre: ${knownName || "no disponible"}`,
@@ -324,7 +329,7 @@ export async function processIncomingMessage(
 
   // Temporal context — the LLM needs today's date to convert "el lunes" / "mañana"
   // into a concrete YYYY-MM-DD for CHECK_DAY actions.
-  const todayContextSection = buildTodayContextSection();
+  const todayContextSection = buildTodayContextSection(userLocale);
   const systemPromptFull = SYSTEM_PROMPT + audioPromptSection + todayContextSection;
 
   // 6. Call OpenAI
@@ -408,11 +413,11 @@ export async function processIncomingMessage(
   if (checkDayAction || legacyCheckAvailability) {
     const requestedDate = checkDayAction
       ? checkDayAction.replace("CHECK_DAY:", "").trim()
-      : tomorrowDateAR();
+      : tomorrowDateForTZ(userLocale.tz);
 
-    console.log(`[WA Agent] CHECK_DAY triggered for ${cleanPhone} | requested: ${requestedDate}`);
+    console.log(`[WA Agent] CHECK_DAY triggered for ${cleanPhone} | requested: ${requestedDate} | tz: ${userLocale.tz}`);
 
-    const result = await getThreeSlotsForDate(requestedDate);
+    const result = await getThreeSlotsForDate(requestedDate, userLocale.tz);
 
     if (result.error || result.slots.length === 0) {
       console.error("[WA Agent] Cal.com no slots / error:", result.error);
@@ -423,11 +428,11 @@ export async function processIncomingMessage(
         .map((s) => `- ${s.shortLabel}  (UTC ISO: ${s.time})`)
         .join("\n");
 
-      const dayHumanFmt = new Intl.DateTimeFormat("es-AR", {
+      const dayHumanFmt = new Intl.DateTimeFormat("es", {
         weekday: "long",
         day: "numeric",
         month: "long",
-        timeZone: "America/Argentina/Buenos_Aires",
+        timeZone: userLocale.tz,
       });
       const dayHuman = dayHumanFmt.format(new Date(`${result.date}T12:00:00Z`));
 
@@ -436,11 +441,11 @@ export async function processIncomingMessage(
           ? `\nNOTA: el día solicitado (${result.requestedDate}) no tenía disponibilidad. Estás ofreciendo el primer día con espacio: ${result.date}. Avisalo brevemente y con naturalidad.`
           : "";
 
-      const availabilityContext = `[CONTEXTO INTERNO — Horarios reales disponibles de la agenda de Cal.com para ${dayHuman} (${result.date}):
+      const availabilityContext = `[CONTEXTO INTERNO — Horarios reales disponibles para ${dayHuman} (${result.date}), ya convertidos a la hora local del usuario en ${userLocale.countryName}:
 ${slotsBlock}
 
 Reglas estrictas:
-1. Mostrale al usuario las 3 opciones (en hora local de Argentina) y preguntale cuál le queda mejor. NO inventes horarios distintos a estos.
+1. Mostrale al usuario las 3 opciones tal cual (ya están en SU hora local). NO inventes horarios distintos a estos. NO digas "hora argentina" salvo que el usuario también esté en Argentina.
 2. Cuando el usuario elija UNO, en tu próxima respuesta incluí "BOOK_SLOT:" con el "UTC ISO" EXACTO de ese slot (no la hora local).
 3. Si el usuario dice que ningún horario de este día le sirve, en tu próxima respuesta incluí "CHECK_DAY:YYYY-MM-DD" del día siguiente.
 4. En este turno NO incluyas BOOK_SLOT — solo presentás opciones.${walkedNote}]`;
@@ -533,6 +538,7 @@ Reglas estrictas:
           name: attendeeName,
           email: attendeeEmail,
           phoneNumber: attendeePhone,
+          timeZone: userLocale.tz, // Cal will send the invite email in this tz
         });
       } else {
         console.error(`[WA Agent] BOOK_SLOT rejected: ${slotTime} not in Cal availability`);
@@ -541,21 +547,33 @@ Reglas estrictas:
       if (bookingResult?.success) {
       console.log(`[WA Agent] Booking created: ${bookingResult.uid}`);
 
-      // Format the confirmed time for the user
+      // Format the confirmed time in the user's local timezone (for the user)
+      // and in Adrian's timezone (for Adrian's notification).
       const confirmedDate = new Date(slotTime);
-      const dateFormatter = new Intl.DateTimeFormat("es-AR", {
+      const userDateFormatter = new Intl.DateTimeFormat("es", {
         weekday: "long",
         day: "numeric",
         month: "long",
         hour: "2-digit",
         minute: "2-digit",
-        timeZone: "America/Argentina/Buenos_Aires",
+        timeZone: userLocale.tz,
         hour12: false,
       });
-      const formattedTime = dateFormatter.format(confirmedDate);
+      const formattedTimeUser = userDateFormatter.format(confirmedDate);
 
-      // Re-invoke LLM to confirm the booking naturally
-      const bookingContext = `[CONTEXTO INTERNO — La reunión fue agendada exitosamente en Cal.com:\n📅 Fecha: ${formattedTime} hs (Argentina)\n✅ Confirmación enviada al email: ${attendeeEmail}\n${bookingResult.meetUrl ? `📹 Link de la reunión: ${bookingResult.meetUrl}` : ""}\n\nConfirmale al prospecto que la reunión está agendada. Mencioná la fecha y hora. Si hay link de videollamada, compartilo. Stage: "booked".]`;
+      const adrianDateFormatter = new Intl.DateTimeFormat("es-AR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: ADRIAN_TZ,
+        hour12: false,
+      });
+      const formattedTimeAdrian = adrianDateFormatter.format(confirmedDate);
+
+      // Re-invoke LLM to confirm the booking naturally — in user's local time
+      const bookingContext = `[CONTEXTO INTERNO — La reunión fue agendada exitosamente en Cal.com:\n📅 Fecha: ${formattedTimeUser} hs (hora local en ${userLocale.countryName})\n✅ Confirmación enviada al email: ${attendeeEmail}\n${bookingResult.meetUrl ? `📹 Link de la reunión: ${bookingResult.meetUrl}` : ""}\n\nConfirmale al prospecto que la reunión está agendada. Mencioná la fecha y hora EN SU HORA LOCAL. Si hay link de videollamada, compartilo. Stage: "booked".]`;
 
       const confirmMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPromptFull },
@@ -578,8 +596,8 @@ Reglas estrictas:
         finalMessage = confirmResponse.message;
         agentResponse.stage = "booked";
       } catch {
-        // Fallback: manual confirmation message
-        finalMessage = `Listo, ya te agendé la reunión para el ${formattedTime} hs 🙌${bookingResult.meetUrl ? `\n\n📹 Nos vemos acá: ${bookingResult.meetUrl}` : ""}`;
+        // Fallback: manual confirmation message (in user's local time)
+        finalMessage = `Listo, ya te agendé la reunión para el ${formattedTimeUser} hs 🙌${bookingResult.meetUrl ? `\n\n📹 Nos vemos acá: ${bookingResult.meetUrl}` : ""}`;
         agentResponse.stage = "booked";
       }
 
@@ -591,9 +609,14 @@ Reglas estrictas:
           .where(eq(leads.id, conversation.leadId));
       }
 
-      // Notify Adrian about the booking
+      // Notify Adrian about the booking — Adrian sees ART; if the prospect
+      // is in a different country, also show the prospect's local time.
+      const userTimeNote =
+        userLocale.tz === ADRIAN_TZ
+          ? ""
+          : `\n🌎 ${userLocale.countryName}: ${formattedTimeUser} hs`;
       await sendWhatsAppMessage(ADRIAN_PHONE,
-        `📅 *REUNIÓN AGENDADA*\n\n👤 ${attendeeName}\n📱 +${cleanPhone}\n📧 ${attendeeEmail}\n🕐 ${formattedTime} hs\n${bookingResult.meetUrl ? `📹 ${bookingResult.meetUrl}` : ""}`
+        `📅 *REUNIÓN AGENDADA*\n\n👤 ${attendeeName}\n📱 +${cleanPhone}\n📧 ${attendeeEmail}\n🕐 ${formattedTimeAdrian} hs (Argentina)${userTimeNote}\n${bookingResult.meetUrl ? `📹 ${bookingResult.meetUrl}` : ""}`
       );
     } else {
       const failureReason = bookingResult?.error || "slot no disponible / formato inválido";
@@ -602,18 +625,18 @@ Reglas estrictas:
       // The agent's pre-booking message likely already said "te agendo..." —
       // we discard it and re-prompt the LLM with fresh availability for the
       // same day, so the user gets ONE coherent message offering real slots.
-      const failureDate = slotTime.split("T")[0] || tomorrowDateAR();
-      const fallback = await getThreeSlotsForDate(failureDate);
+      const failureDate = slotTime.split("T")[0] || tomorrowDateForTZ(userLocale.tz);
+      const fallback = await getThreeSlotsForDate(failureDate, userLocale.tz);
 
       if (!fallback.error && fallback.slots.length > 0) {
         const slotsBlock = fallback.slots
           .map((s) => `- ${s.shortLabel}  (UTC ISO: ${s.time})`)
           .join("\n");
-        const dayHumanFmt = new Intl.DateTimeFormat("es-AR", {
+        const dayHumanFmt = new Intl.DateTimeFormat("es", {
           weekday: "long",
           day: "numeric",
           month: "long",
-          timeZone: "America/Argentina/Buenos_Aires",
+          timeZone: userLocale.tz,
         });
         const dayHuman = dayHumanFmt.format(new Date(`${fallback.date}T12:00:00Z`));
 
@@ -1051,46 +1074,136 @@ async function sendNoClickNudge(conversationId: string, phone: string) {
   }
 }
 
-// ─── Date helpers (Argentina-aware) ──────────────────────────────────────────
+// ─── Locale / timezone helpers ───────────────────────────────────────────────
 
 const AR_TZ = "America/Argentina/Buenos_Aires";
+const ADRIAN_TZ = AR_TZ; // used for Adrian's own notification
 
-/** Returns today's date in Argentina as "YYYY-MM-DD". */
-function todayDateAR(): string {
+// Phone dial-prefix → ISO 3166-1 alpha-2 country code. Ordered longest-first
+// so a 4-digit prefix wins over an embedded 1-digit prefix.
+const PHONE_PREFIX_TO_COUNTRY: Array<[string, string]> = [
+  ["1809", "DO"], ["1829", "DO"], ["1849", "DO"],
+  ["1787", "PR"], ["1939", "PR"],
+  ["598", "UY"], ["595", "PY"], ["593", "EC"], ["591", "BO"],
+  ["507", "PA"], ["506", "CR"], ["505", "NI"], ["504", "HN"],
+  ["503", "SV"], ["502", "GT"],
+  ["58", "VE"], ["57", "CO"], ["56", "CL"], ["55", "BR"],
+  ["54", "AR"], ["53", "CU"], ["52", "MX"], ["51", "PE"],
+  ["44", "GB"], ["34", "ES"],
+  ["1", "US"], // catch-all for NANP — could also be CA, but US is the safer default for the audience
+];
+
+const COUNTRY_TO_TZ: Record<string, string> = {
+  AR: "America/Argentina/Buenos_Aires",
+  UY: "America/Montevideo",
+  BR: "America/Sao_Paulo",
+  CL: "America/Santiago",
+  CO: "America/Bogota",
+  PE: "America/Lima",
+  MX: "America/Mexico_City",
+  EC: "America/Guayaquil",
+  VE: "America/Caracas",
+  PY: "America/Asuncion",
+  BO: "America/La_Paz",
+  CR: "America/Costa_Rica",
+  PA: "America/Panama",
+  DO: "America/Santo_Domingo",
+  GT: "America/Guatemala",
+  HN: "America/Tegucigalpa",
+  SV: "America/El_Salvador",
+  NI: "America/Managua",
+  CU: "America/Havana",
+  PR: "America/Puerto_Rico",
+  US: "America/New_York", // default to Eastern; user's actual zone may differ
+  ES: "Europe/Madrid",
+  GB: "Europe/London",
+};
+
+const COUNTRY_NAMES_ES: Record<string, string> = {
+  AR: "Argentina", UY: "Uruguay", BR: "Brasil", CL: "Chile",
+  CO: "Colombia", PE: "Perú", MX: "México", EC: "Ecuador",
+  VE: "Venezuela", PY: "Paraguay", BO: "Bolivia", CR: "Costa Rica",
+  PA: "Panamá", DO: "República Dominicana", GT: "Guatemala",
+  HN: "Honduras", SV: "El Salvador", NI: "Nicaragua",
+  CU: "Cuba", PR: "Puerto Rico", US: "Estados Unidos",
+  ES: "España", GB: "Reino Unido",
+};
+
+interface UserLocale {
+  tz: string;            // IANA timezone — used for slot fetch and display
+  country: string | null; // ISO 3166-1 alpha-2 — null if undetected
+  countryName: string;   // Spanish name for the country (or "su zona" fallback)
+}
+
+function detectCountryFromPhone(phone: string): string | null {
+  const clean = phone.replace(/[^0-9]/g, "");
+  for (const [prefix, country] of PHONE_PREFIX_TO_COUNTRY) {
+    if (clean.startsWith(prefix)) return country;
+  }
+  return null;
+}
+
+/**
+ * Resolves the user's timezone + country, preferring the country stored in
+ * leadContext (set at lead capture from the form). Falls back to the phone
+ * prefix, and finally to ART so the bot still works for unknown numbers.
+ */
+function resolveUserLocale(
+  leadCountry: string | null | undefined,
+  phone: string
+): UserLocale {
+  let country = leadCountry?.toUpperCase().trim() || null;
+  if (!country || !COUNTRY_TO_TZ[country]) {
+    country = detectCountryFromPhone(phone);
+  }
+  const tz = (country && COUNTRY_TO_TZ[country]) || AR_TZ;
+  const countryName = country
+    ? (COUNTRY_NAMES_ES[country] || country)
+    : "tu zona";
+  return { tz, country, countryName };
+}
+
+/** Returns today's date in the given tz as "YYYY-MM-DD". */
+function todayDateForTZ(tz: string): string {
   // en-CA emits ISO-style YYYY-MM-DD when given the right options
   const fmt = new Intl.DateTimeFormat("en-CA", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    timeZone: AR_TZ,
+    timeZone: tz,
   });
   return fmt.format(new Date());
 }
 
-/** Returns tomorrow's date in Argentina as "YYYY-MM-DD". */
-function tomorrowDateAR(): string {
-  const today = todayDateAR();
+/** Returns tomorrow's date in the given tz as "YYYY-MM-DD". */
+function tomorrowDateForTZ(tz: string): string {
+  const today = todayDateForTZ(tz);
   const d = new Date(`${today}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().split("T")[0];
 }
 
 /**
- * Builds a small system-prompt section telling the LLM today's date so it can
- * resolve relative day references ("el lunes", "mañana") into a concrete
- * YYYY-MM-DD for CHECK_DAY actions.
+ * Builds the system-prompt section telling the LLM today's date in the
+ * user's local timezone. The LLM uses this to resolve "el lunes" / "mañana"
+ * into a concrete YYYY-MM-DD for CHECK_DAY, and to know which timezone its
+ * spoken time references should be in.
  */
-function buildTodayContextSection(): string {
-  const today = todayDateAR();
-  const humanFmt = new Intl.DateTimeFormat("es-AR", {
+function buildTodayContextSection(locale: UserLocale): string {
+  const today = todayDateForTZ(locale.tz);
+  const humanFmt = new Intl.DateTimeFormat("es", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: AR_TZ,
+    timeZone: locale.tz,
   });
   const humanToday = humanFmt.format(new Date(`${today}T12:00:00Z`));
   return `\n\n# CONTEXTO TEMPORAL
-Hoy es ${humanToday} (${today}, hora de Argentina).
-Cuando el usuario diga un día relativo ("hoy", "mañana", "el lunes", "el viernes próximo"), convertilo a YYYY-MM-DD usando esta fecha como referencia, y mandalo en "CHECK_DAY:YYYY-MM-DD".`;
+La persona está en ${locale.countryName} (zona horaria ${locale.tz}).
+Hoy es ${humanToday} (${today}, hora local de la persona).
+
+Reglas:
+- Cuando el usuario diga un día relativo ("hoy", "mañana", "el lunes", "el viernes próximo"), convertilo a YYYY-MM-DD usando esta fecha como referencia, y mandalo en "CHECK_DAY:YYYY-MM-DD".
+- Todos los horarios que el sistema te pase ya están convertidos a la hora local del usuario; mostralos tal cual y NO menciones "hora argentina" salvo que el usuario también esté en Argentina.`;
 }

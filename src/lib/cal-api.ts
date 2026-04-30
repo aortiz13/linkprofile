@@ -250,18 +250,29 @@ export async function getThreeSlotsForDate(
 ): Promise<ThreeSlotsResult> {
   let cursor = requestedDate;
   for (let walked = 0; walked < maxLookaheadDays; walked++) {
-    const startISO = `${cursor}T00:00:00Z`;
-    const endISO = `${cursor}T23:59:59Z`;
-    const { slots: byDate, error } = await getAvailableSlots(startISO, endISO, timeZone);
+    // Query a wider UTC window (1 day before and 1 day after the requested
+    // user-tz day) so we cover that day's full span regardless of the user's
+    // offset from UTC. We then filter by the user-tz date key to keep only
+    // slots whose local date matches `cursor`.
+    const startD = new Date(`${cursor}T00:00:00Z`);
+    startD.setUTCDate(startD.getUTCDate() - 1);
+    const endD = new Date(`${cursor}T00:00:00Z`);
+    endD.setUTCDate(endD.getUTCDate() + 2);
+    const { slots: byDate, error } = await getAvailableSlots(
+      startD.toISOString(),
+      endD.toISOString(),
+      timeZone
+    );
 
     if (error) {
       return { date: cursor, requestedDate, walkedForwardDays: walked, slots: [], error };
     }
 
-    const allTimes: string[] = [];
-    for (const daySlots of Object.values(byDate)) {
-      for (const s of daySlots) allTimes.push(s.time);
-    }
+    // Cal.com keys slots by date in the requested timezone. We want exactly
+    // the slots whose user-local date matches `cursor`. Fall back to flatten
+    // if Cal returned a non-keyed shape.
+    const cursorSlots = byDate[cursor] || [];
+    const allTimes: string[] = cursorSlots.map((s) => s.time);
     allTimes.sort();
 
     if (allTimes.length > 0) {
@@ -274,7 +285,7 @@ export async function getThreeSlotsForDate(
               allTimes[allTimes.length - 1],
             ];
 
-      const fullFmt = new Intl.DateTimeFormat("es-AR", {
+      const fullFmt = new Intl.DateTimeFormat("es", {
         weekday: "long",
         day: "numeric",
         month: "long",
@@ -283,7 +294,7 @@ export async function getThreeSlotsForDate(
         timeZone,
         hour12: false,
       });
-      const shortFmt = new Intl.DateTimeFormat("es-AR", {
+      const shortFmt = new Intl.DateTimeFormat("es", {
         hour: "2-digit",
         minute: "2-digit",
         timeZone,
