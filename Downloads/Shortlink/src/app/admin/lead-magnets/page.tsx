@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Gift, Plus, Loader2, Save, Check, Trash2, ExternalLink,
@@ -75,7 +74,6 @@ export default function LeadMagnetsPage() {
   const [copied, setCopied] = useState("");
   const [newOccupation, setNewOccupation] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -87,7 +85,7 @@ export default function LeadMagnetsPage() {
     } catch {} finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchMagnets(); setMounted(true); }, []);
+  useEffect(() => { fetchMagnets(); }, []);
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -162,6 +160,7 @@ export default function LeadMagnetsPage() {
   }
 
   return (
+    <>
     <div className="flex-1 p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -266,21 +265,20 @@ export default function LeadMagnetsPage() {
         </div>
       )}
 
-      {/* Create/Edit Form Modal — rendered via portal to escape stacking context */}
-      {mounted && createPortal(
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-              style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
-              onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingId(null); } }}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col"
-                style={{ maxHeight: "85vh" }}
-                onClick={(e) => e.stopPropagation()}
+    </div>
+
+    {/* Create/Edit Form Modal — fixed overlay outside main content */}
+    <AnimatePresence>
+      {showForm && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingId(null); } }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: "85vh", width: "100%", maxWidth: 512, display: "flex", flexDirection: "column", borderRadius: 16, border: "1px solid var(--border)", background: "var(--bg-surface)", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
               >
                 <div className="shrink-0 bg-[var(--bg-surface)] border-b border-[var(--border)] p-5 flex items-center justify-between rounded-t-2xl">
                   <h2 className="text-lg font-bold text-[var(--text-primary)]">
@@ -432,12 +430,10 @@ export default function LeadMagnetsPage() {
                     {saving ? "Guardando..." : editingId ? "Actualizar" : "Crear"}
                   </button>
                 </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body
+          </motion.div>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
+    </>
   );
 }
