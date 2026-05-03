@@ -13,7 +13,7 @@
 
 import { db } from "@/lib/db";
 import { waConversations, waMessages } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import { sendWhatsAppMessage } from "@/lib/evolution-api";
 
 // ─── In-memory timer storage ─────────────────────────────────────────────────
@@ -155,30 +155,16 @@ async function sendNoReplyFollowup(
 
   if (!conv || !conv.active || conv.optedOut) return;
 
-  // Check if user already responded (noReplyFollowups would be 0)
-  if (conv.noReplyFollowups >= followupNumber) {
-    console.log(`[NoReply] Follow-up #${followupNumber} already sent for ${phone}, skipping.`);
-    return;
-  }
-
-  // Check if the user sent a message after our last message
-  const lastUserMessage = await db
-    .select()
+  // Check if the user sent a message after our last message — read the most
+  // recent message and bail if it's from the user.
+  const [lastMsg] = await db
+    .select({ role: waMessages.role, content: waMessages.content })
     .from(waMessages)
     .where(eq(waMessages.conversationId, conversationId))
-    .orderBy(waMessages.createdAt)
+    .orderBy(desc(waMessages.createdAt))
     .limit(1);
 
-  // Get last message
-  const allMessages = await db
-    .select()
-    .from(waMessages)
-    .where(eq(waMessages.conversationId, conversationId))
-    .orderBy(waMessages.createdAt);
-
-  const lastMsg = allMessages[allMessages.length - 1];
   if (lastMsg && lastMsg.role === "user") {
-    // User already responded, skip
     console.log(`[NoReply] User ${phone} already responded, skipping follow-up #${followupNumber}`);
     return;
   }
@@ -214,19 +200,37 @@ async function sendNoReplyFollowup(
       return;
   }
 
+  // Defense in depth: if the assistant's most recent message is already this
+  // exact text, this follow-up was already sent (e.g. by another replica or
+  // by the same one before a restart that lost the in-memory counter sync).
+  if (lastMsg && lastMsg.role === "assistant" && lastMsg.content === message) {
+    console.log(`[NoReply] Follow-up #${followupNumber} already in transcript for ${phone} — skipping duplicate.`);
+    return;
+  }
+
+  // Atomic claim: only proceed if this follow-up number hasn't been claimed
+  // yet. Two concurrent firers (timer + restart, two replicas, retry) will
+  // race on this UPDATE; only one row comes back.
+  const claim = await db
+    .update(waConversations)
+    .set({ noReplyFollowups: followupNumber, updatedAt: new Date() })
+    .where(
+      and(
+        eq(waConversations.id, conversationId),
+        lt(waConversations.noReplyFollowups, followupNumber)
+      )
+    )
+    .returning({ id: waConversations.id });
+
+  if (claim.length === 0) {
+    console.log(`[NoReply] Follow-up #${followupNumber} already claimed for ${phone}, skipping.`);
+    return;
+  }
+
   const result = await sendWhatsAppMessage(phone, message);
 
   if (result.success) {
-    // Update counter
-    await db
-      .update(waConversations)
-      .set({
-        noReplyFollowups: followupNumber,
-        updatedAt: new Date(),
-      })
-      .where(eq(waConversations.id, conversationId));
-
-    // Store message in memory
+    // Store message in memory (counter was already incremented by the claim).
     await db.insert(waMessages).values({
       conversationId,
       role: "assistant",
@@ -234,5 +238,9 @@ async function sendNoReplyFollowup(
     });
 
     console.log(`[NoReply] Follow-up #${followupNumber} sent to ${phone}`);
+  } else {
+    console.error(`[NoReply] Follow-up #${followupNumber} send failed for ${phone}: ${result.error}`);
+    // Counter already incremented — that's intentional. We'd rather lose a
+    // failed follow-up than risk duplicating it on a retry.
   }
 }

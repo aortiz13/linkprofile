@@ -170,10 +170,12 @@ PASO 4 — Reservá con BOOK_SLOT:
 - En algún momento durante la fase de discovery o qualification, podés invitar a la persona a mandar un audio si prefiere explicarse mejor. Ejemplo: "Si te resulta más fácil, mandame un audio contándome y te escucho 🎙️"
 - Solo invitá a mandar audio UNA vez en la conversación, no insistas.
 
-# AUDIOS PRE-GRABADOS
-- Tenés audios pre-grabados tuyos que podés enviar en momentos clave.
+# AUDIOS PRE-GRABADOS (REGLA ESTRICTA)
+- Tenés audios pre-grabados tuyos que SOLO podés enviar después de haber calificado al prospecto y de que la persona haya mostrado interés EXPLÍCITO en las asesorías. NUNCA en greeting, discovery o qualification.
+- Momento natural para enviar audio: cuando ya pasaste por value_delivery y vas a mandar el link (SEND_LINK), o más adelante en closing/booking si el contexto lo amerita.
+- Si la persona no preguntó ni dio señales claras de interés en las asesorías, NO incluyas SEND_AUDIO. El sistema lo va a bloquear de todas formas si el stage no llegó a value_delivery o más.
 - Para enviar un audio, incluí "SEND_AUDIO:trigger_key" en actions.
-- Enviá máximo UN audio por conversación.
+- MÁXIMO UN audio por conversación. Si ya enviaste uno, no envíes otro.
 - El audio se envía ANTES del mensaje de texto. El texto debe complementar el audio, no repetirlo.
 - Los audios disponibles se listan al final de este prompt.
 
@@ -727,27 +729,49 @@ Reglas:
     cancelNoReplyFollowups(cleanPhone);
   }
 
-  // 9. Auto-send pre-recorded audio based on action/stage
-  //    Map actions and stages to audio trigger keys
+  // 9. Auto-send pre-recorded audio based on action/stage.
+  //
+  // Audios may only be sent when the prospect has shown explicit interest
+  // in the asesorías. In practice that means: stage has progressed past
+  // qualification AND we are sending the link (or the LLM explicitly asked
+  // for an audio). NEVER on first contact / greeting / discovery /
+  // qualification — at those stages we don't know the prospect yet.
   let autoAudioTrigger: string | null = null;
 
-  // Check LLM-requested audio first
-  const audioAction = agentResponse.actions?.find((a) => a.startsWith("SEND_AUDIO:"));
-  if (audioAction) {
-    autoAudioTrigger = audioAction.replace("SEND_AUDIO:", "");
-  }
+  const QUALIFIED_STAGES = new Set([
+    "value_delivery", "link_offer", "followup", "closing", "booking", "booked",
+  ]);
+  const isQualified = QUALIFIED_STAGES.has(agentResponse.stage);
 
-  // Auto-trigger based on actions (higher priority)
+  // Auto-trigger when the link is being sent (this is the key moment of
+  // explicit interest — the LLM only emits SEND_LINK after qualification).
   if (
-    !autoAudioTrigger &&
-    (agentResponse.actions?.includes("SEND_LINK") || agentResponse.message.includes("[ENVIAR_LINK]"))
+    agentResponse.actions?.includes("SEND_LINK") ||
+    agentResponse.message.includes("[ENVIAR_LINK]")
   ) {
     autoAudioTrigger = "link_offer";
   }
 
-  // Auto-trigger based on stage transitions (only on first message of that stage)
-  if (!autoAudioTrigger && chatHistory.length === 0) {
-    autoAudioTrigger = "greeting"; // First message ever
+  // LLM-requested audio overrides auto-trigger key, but still requires
+  // the conversation to have reached a qualified stage.
+  const audioAction = agentResponse.actions?.find((a) => a.startsWith("SEND_AUDIO:"));
+  if (audioAction) {
+    if (isQualified) {
+      autoAudioTrigger = audioAction.replace("SEND_AUDIO:", "");
+    } else {
+      console.log(
+        `[WA Agent] LLM requested SEND_AUDIO at stage "${agentResponse.stage}" — blocked, prospect not qualified yet.`
+      );
+    }
+  }
+
+  // Final stage guard — block any audio attempt during early stages even
+  // if a trigger somehow slipped through.
+  if (autoAudioTrigger && !isQualified) {
+    console.log(
+      `[WA Agent] Audio "${autoAudioTrigger}" suppressed: stage "${agentResponse.stage}" is pre-qualification.`
+    );
+    autoAudioTrigger = null;
   }
 
   // Send the audio if we have a trigger
