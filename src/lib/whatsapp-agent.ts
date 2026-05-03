@@ -618,6 +618,17 @@ Reglas estrictas:
       await sendWhatsAppMessage(ADRIAN_PHONE,
         `📅 *REUNIÓN AGENDADA*\n\n👤 ${attendeeName}\n📱 +${cleanPhone}\n📧 ${attendeeEmail}\n🕐 ${formattedTimeAdrian} hs (Argentina)${userTimeNote}\n${bookingResult.meetUrl ? `📹 ${bookingResult.meetUrl}` : ""}`
       );
+
+      // Booking complete → disconnect the agent from this conversation.
+      // Sets active=false so the early-return guard at the top of
+      // processIncomingMessage drops any future messages from this number,
+      // and cancels any pending no-reply follow-ups.
+      await db
+        .update(waConversations)
+        .set({ active: false, stage: "booked", updatedAt: new Date() })
+        .where(eq(waConversations.id, conversation.id));
+      cancelNoReplyFollowups(cleanPhone);
+      console.log(`[WA Agent] ${cleanPhone} marked inactive after successful booking — agent disconnected.`);
     } else {
       const failureReason = bookingResult?.error || "slot no disponible / formato inválido";
       console.error("[WA Agent] Booking failed:", failureReason, "| slot:", slotTime);
@@ -831,8 +842,10 @@ Reglas:
     })
     .where(eq(waConversations.id, conversation.id));
 
-  // 13. Schedule no-reply follow-ups
-  scheduleNoReplyFollowups(cleanPhone, conversation.id, leadCtx?.country || null);
+  // 13. Schedule no-reply follow-ups — except when booking is complete
+  if (agentResponse.stage !== "booked") {
+    scheduleNoReplyFollowups(cleanPhone, conversation.id, leadCtx?.country || null);
+  }
 
   console.log(
     `[WA Agent] Processed message for ${cleanPhone} | Stage: ${agentResponse.stage} | Score: ${agentResponse.qualification_score}`
