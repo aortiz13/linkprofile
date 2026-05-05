@@ -15,7 +15,7 @@ export default function A1Client() {
             <span className="eyebrow-line__dot" />
             Sábado 16 May · 100% EN VIVO · USD $17
           </span>
-          <h1>Pagás Claude Pro y solo usás <em>el 1%</em> de su potencial.</h1>
+          <h1>Tenes Claude y solo usás <em>el 1%</em> de su potencial.</h1>
           <p className="hero__sub">
             Sesión <strong>100% en vivo</strong> donde vas a pasar de prompts básicos a sistemas automatizados que trabajan por vos mientras dormís.
           </p>
@@ -79,7 +79,7 @@ export default function A1Client() {
         <div className="container">
           <div className="author-block">
             <div className="author-block__photo author-block__photo--img">
-              <Image src="/workshop/instructor.png" alt="Tu instructor" width={120} height={120} />
+              <Image src="https://res.cloudinary.com/dhzmkxbek/image/upload/v1764023274/Disen%CC%83o_sin_ti%CC%81tulo_7_guvgsu.png" alt="Tu instructor" width={120} height={120} />
             </div>
             <div>
               <span className="author-block__name">Tu instructor</span>
@@ -272,12 +272,12 @@ export default function A1Client() {
             {[
               { flag: "🇦🇷", country: "Argentina", time: "10:00 hs", featured: true },
               { flag: "🇺🇾", country: "Uruguay · Paraguay", time: "10:00 hs" },
-              { flag: "🇨🇱", country: "Chile", time: "10:00 hs" },
+              { flag: "🇨🇱", country: "Chile", time: "09:00 hs" },
               { flag: "🇧🇷", country: "Brasil (BRT)", time: "10:00 hs" },
               { flag: "🇨🇴", country: "Colombia · Perú · Ecuador", time: "08:00 hs" },
               { flag: "🇲🇽", country: "México (CDMX)", time: "07:00 hs" },
-              { flag: "🇺🇸", country: "USA (ET / Miami · NY)", time: "08:00 hs" },
-              { flag: "🇪🇸", country: "España", time: "14:00 hs" },
+              { flag: "🇺🇸", country: "USA (ET / Miami · NY)", time: "09:00 hs" },
+              { flag: "🇪🇸", country: "España", time: "15:00 hs" },
             ].map((tz) => (
               <li key={tz.country} className={`tz-item${tz.featured ? " tz-item--featured" : ""}`}>
                 <span className="tz-item__flag">{tz.flag}</span>
