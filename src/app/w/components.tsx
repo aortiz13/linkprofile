@@ -196,7 +196,7 @@ export function StickyCta() {
         <small>Workshop 16 May</small>
         <span>$17 USD · 100 cupos</span>
       </div>
-      <a href="#reservar" className="sticky-cta__btn">Reservar →</a>
+      <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="sticky-cta__btn">Reservar →</a>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default function GraciasClient() {
             </div>
             <p className="price-block__note">Precio de lanzamiento. Solo disponible en esta página.</p>
 
-            <a href="/w/a1#reservar" className="btn btn--accent btn--lg">
+            <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="btn btn--accent btn--lg">
               Quiero mi lugar — $17 USD
               <span className="btn-arrow">→</span>
             </a>
