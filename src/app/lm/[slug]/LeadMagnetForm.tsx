@@ -270,8 +270,8 @@ export function LeadMagnetForm({
           <div className="mb-6">
             <div className="flex items-start gap-4">
               <div className="relative shrink-0">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(6, 182, 212, 0.15)" }}>
-                  <Gift className="w-7 h-7" style={{ color: "var(--accent)" }} />
+                <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/15 flex items-center justify-center">
+                  <Gift className="w-7 h-7 text-[var(--accent)]" />
                 </div>
                 <motion.div
                   className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[var(--bg-surface)]"
@@ -301,15 +301,14 @@ export function LeadMagnetForm({
           {/* Name */}
           {showName && (
             <div className="relative">
-              <User style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "var(--text-muted)" }} />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nombre completo"
                 required
-                className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl pr-4 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] transition-all text-sm"
-                style={{ paddingLeft: 40 }}
+                className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
               />
             </div>
           )}
@@ -317,15 +316,14 @@ export function LeadMagnetForm({
           {/* Email */}
           {showEmail && (
             <div className="relative">
-              <Mail style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "var(--text-muted)" }} />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Correo electrónico"
                 required
-                className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl pr-4 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] transition-all text-sm"
-                style={{ paddingLeft: 40 }}
+                className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all text-sm"
               />
             </div>
           )}
@@ -333,27 +331,21 @@ export function LeadMagnetForm({
           {/* WhatsApp */}
           {showWhatsapp && (
             <>
-            <div className="flex gap-2" style={{ position: "relative", zIndex: phoneCountryOpen ? 100 : 1 }}>
+            <div className="flex gap-2">
               {/* Country code selector */}
               <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setPhoneCountryOpen(!phoneCountryOpen); }}
-                  className="flex items-center gap-1.5 bg-[var(--bg-surface)] rounded-xl px-3 py-3.5 text-sm transition-all min-w-[100px]"
-                  style={{
-                    border: phoneCountryOpen ? "1px solid var(--accent)" : "1px solid var(--border)",
-                    boxShadow: phoneCountryOpen ? "0 0 0 2px rgba(6, 182, 212, 0.2)" : undefined,
-                  }}
+                  className={`flex items-center gap-1.5 bg-[var(--bg-surface)] border rounded-xl px-3 py-3.5 text-sm transition-all min-w-[100px] ${
+                    phoneCountryOpen
+                      ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/20"
+                      : "border-[var(--border)] hover:border-[var(--border-hover)]"
+                  }`}
                 >
                   <span className="text-base leading-none">{countryCode.flag}</span>
                   <span className="text-[var(--text-primary)] font-medium">{countryCode.code}</span>
-                  <ChevronDown
-                    style={{
-                      width: 14, height: 14, color: "var(--text-muted)",
-                      transition: "transform 0.2s",
-                      transform: phoneCountryOpen ? "rotate(180deg)" : undefined,
-                    }}
-                  />
+                  <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform ${phoneCountryOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 <AnimatePresence>
@@ -363,34 +355,22 @@ export function LeadMagnetForm({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
                       transition={{ duration: 0.15 }}
-                      style={{
-                        position: "absolute",
-                        zIndex: 9999,
-                        width: 224,
-                        marginTop: 6,
-                        background: "var(--bg-surface)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1)",
-                        maxHeight: 220,
-                        overflowY: "auto",
-                      }}
+                      className="absolute z-[9999] w-56 mt-1.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
                     >
                       {COUNTRY_CODES.map((c) => (
                         <button
                           key={c.code}
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setCountryCode(c); setPhoneCountryOpen(false); }}
-                          className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors hover:bg-[var(--bg-elevated)]"
-                          style={{
-                            background: countryCode.code === c.code ? "rgba(6, 182, 212, 0.1)" : undefined,
-                            color: countryCode.code === c.code ? "var(--accent)" : "var(--text-primary)",
-                            fontWeight: countryCode.code === c.code ? 500 : undefined,
-                          }}
+                          className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors ${
+                            countryCode.code === c.code
+                              ? "bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
+                              : "text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                          }`}
                         >
                           <span className="text-base leading-none">{c.flag}</span>
                           <span className="flex-1">{c.name}</span>
-                          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{c.code}</span>
+                          <span className="text-[var(--text-muted)] text-xs">{c.code}</span>
                         </button>
                       ))}
                     </motion.div>
@@ -400,11 +380,11 @@ export function LeadMagnetForm({
 
               {/* Phone number */}
               <div className="relative flex-1">
-                <Phone style={{
-                  position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-                  width: 16, height: 16, transition: "color 0.2s",
-                  color: waValidation.status === "valid" ? "#10b981" : waValidation.status === "invalid" ? "#ef4444" : "var(--text-muted)",
-                }} />
+                <Phone className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${
+                  waValidation.status === "valid" ? "text-emerald-500" :
+                  waValidation.status === "invalid" ? "text-red-500" :
+                  "text-[var(--text-muted)]"
+                }`} />
                 <input
                   type="tel"
                   value={phoneNumber}
@@ -419,22 +399,22 @@ export function LeadMagnetForm({
                   }}
                   placeholder="11 1234 5678"
                   required
-                  className="w-full bg-[var(--bg-surface)] rounded-xl py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all text-sm"
-                  style={{
-                    paddingLeft: 40, paddingRight: 40,
-                    border: `1px solid ${waValidation.status === "valid" ? "#10b981" : waValidation.status === "invalid" ? "#ef4444" : "var(--border)"}`,
-                  }}
+                  className={`w-full bg-[var(--bg-surface)] border rounded-xl pl-10 pr-10 py-3.5 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all text-sm ${
+                    waValidation.status === "valid" ? "border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" :
+                    waValidation.status === "invalid" ? "border-red-500 focus:ring-2 focus:ring-red-500/20" :
+                    "border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                  }`}
                 />
                 {/* Validation status indicator */}
-                <div style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)" }}>
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                   {waValidation.status === "checking" && (
-                    <Loader2 className="animate-spin" style={{ width: 16, height: 16, color: "var(--accent)" }} />
+                    <Loader2 className="w-4 h-4 animate-spin text-[var(--accent)]" />
                   )}
                   {waValidation.status === "valid" && (
-                    <CheckCircle style={{ width: 16, height: 16, color: "#10b981" }} />
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
                   )}
                   {waValidation.status === "invalid" && (
-                    <AlertCircle style={{ width: 16, height: 16, color: "#ef4444" }} />
+                    <AlertCircle className="w-4 h-4 text-red-500" />
                   )}
                 </div>
               </div>
@@ -457,29 +437,30 @@ export function LeadMagnetForm({
 
           {/* Occupation dropdown */}
           {showOccupation && (
-            <div style={{ position: "relative", zIndex: dropdownOpen ? 100 : 1 }}>
-              <Briefcase style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "var(--text-muted)", zIndex: 10 }} />
+            <div className="relative">
+              <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] z-10" />
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setDropdownOpen(!dropdownOpen);
                 }}
-                className="w-full bg-[var(--bg-surface)] rounded-xl py-3.5 outline-none text-left text-sm transition-all"
-                style={{
-                  paddingLeft: 40, paddingRight: 40,
-                  color: occupation ? "var(--text-primary)" : "var(--text-muted)",
-                  border: dropdownOpen ? "1px solid var(--accent)" : "1px solid var(--border)",
-                }}
+                className={`w-full bg-[var(--bg-surface)] border rounded-xl pl-10 pr-10 py-3.5 outline-none text-left text-sm transition-all ${
+                  occupation
+                    ? "text-[var(--text-primary)] border-[var(--border)]"
+                    : "text-[var(--text-muted)] border-[var(--border)]"
+                } ${
+                  dropdownOpen
+                    ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/20"
+                    : "hover:border-[var(--border-hover)]"
+                }`}
               >
                 {occupation || "Selecciona tu ocupación"}
               </button>
               <ChevronDown
-                style={{
-                  position: "absolute", right: 14, top: "50%",
-                  transform: `translateY(-50%) ${dropdownOpen ? "rotate(180deg)" : ""}`,
-                  width: 16, height: 16, color: "var(--text-muted)", transition: "transform 0.2s",
-                }}
+                className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] transition-transform ${
+                  dropdownOpen ? "rotate-180" : ""
+                }`}
               />
 
               <AnimatePresence>
@@ -489,17 +470,7 @@ export function LeadMagnetForm({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    style={{
-                      position: "absolute",
-                      zIndex: 9999,
-                      width: "100%",
-                      marginTop: 6,
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 12,
-                      boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1)",
-                      overflow: "hidden",
-                    }}
+                    className="absolute z-[9999] w-full mt-1.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden"
                   >
                     {occupationOptions.map((opt) => (
                       <button
@@ -510,12 +481,11 @@ export function LeadMagnetForm({
                           setOccupation(opt);
                           setDropdownOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-[var(--bg-elevated)]"
-                        style={{
-                          background: occupation === opt ? "rgba(6, 182, 212, 0.1)" : undefined,
-                          color: occupation === opt ? "var(--accent)" : "var(--text-primary)",
-                          fontWeight: occupation === opt ? 500 : undefined,
-                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                          occupation === opt
+                            ? "bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
+                            : "text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                        }`}
                       >
                         {opt}
                       </button>
@@ -563,7 +533,7 @@ export function LeadMagnetForm({
               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                 acceptPrivacy
                   ? "bg-[var(--accent)] border-[var(--accent)]"
-                  : "border-[var(--border)]"
+                  : "border-[var(--border)] group-hover:border-[var(--accent)]/50"
               }`}>
                 {acceptPrivacy && (
                   <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -619,8 +589,8 @@ export function LeadMagnetForm({
             )}
           </motion.button>
 
-          <div className="flex items-center justify-center gap-1.5 text-[10px] mt-1" style={{ color: "var(--text-muted)", opacity: 0.6 }}>
-            <Shield style={{ width: 12, height: 12 }} />
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-[var(--text-muted)]/60 mt-1">
+            <Shield className="w-3 h-3" />
             Tus datos están protegidos y seguros
           </div>
         </form>
