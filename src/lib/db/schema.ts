@@ -289,6 +289,65 @@ export const waAudioSnippets = pgTable(
   (t) => [index("wa_audio_trigger_idx").on(t.triggerKey)]
 );
 
+// ─── Broadcast Campaigns ─────────────────────────────────────────────────────
+export const broadcastCampaigns = pgTable(
+  "broadcast_campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    template: text("template").notNull(), // Message with spintax + variables
+    filters: jsonb("filters").notNull().default({}), // Audience filters
+    status: text("status").notNull().default("draft"),
+    // draft | sending | paused | completed | cancelled
+    totalRecipients: integer("total_recipients").notNull().default(0),
+    sentCount: integer("sent_count").notNull().default(0),
+    failedCount: integer("failed_count").notNull().default(0),
+    replyCount: integer("reply_count").notNull().default(0),
+    rateConfig: jsonb("rate_config").notNull().default({
+      intervalMinMs: 15000,
+      intervalMaxMs: 45000,
+      pauseEveryN: 10,
+      pauseDurationMs: 180000,
+      maxPerSession: 60,
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    startedAt: timestamp("started_at"),
+    completedAt: timestamp("completed_at"),
+  },
+  (t) => [
+    index("bc_profile_idx").on(t.profileId),
+    index("bc_status_idx").on(t.status),
+  ]
+);
+
+// ─── Broadcast Recipients ────────────────────────────────────────────────────
+export const broadcastRecipients = pgTable(
+  "broadcast_recipients",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => broadcastCampaigns.id, { onDelete: "cascade" }),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    phone: text("phone").notNull(),
+    messageSent: text("message_sent"), // Exact message sent (post-spintax)
+    status: text("status").notNull().default("pending"),
+    // pending | sent | failed | skipped
+    error: text("error"),
+    sentAt: timestamp("sent_at"),
+    replied: boolean("replied").notNull().default(false),
+  },
+  (t) => [
+    index("br_campaign_idx").on(t.campaignId),
+    index("br_status_idx").on(t.campaignId, t.status),
+  ]
+);
+
 // ─── Type exports ────────────────────────────────────────────────────────────
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
@@ -309,3 +368,5 @@ export type WaConversation = typeof waConversations.$inferSelect;
 export type WaMessage = typeof waMessages.$inferSelect;
 export type WaLinkToken = typeof waLinkTokens.$inferSelect;
 export type WaAudioSnippet = typeof waAudioSnippets.$inferSelect;
+export type BroadcastCampaign = typeof broadcastCampaigns.$inferSelect;
+export type BroadcastRecipient = typeof broadcastRecipients.$inferSelect;
