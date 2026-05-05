@@ -498,7 +498,8 @@ export function LeadMagnetForm({
                       border: "1px solid var(--border)",
                       borderRadius: 12,
                       boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1)",
-                      overflow: "hidden",
+                      maxHeight: 260,
+                      overflowY: "auto",
                     }}
                   >
                     {occupationOptions.map((opt) => (
