@@ -146,8 +146,7 @@ export default function A1Client() {
                   <span className="module-card__time">EN VIVO</span>
                 </div>
                 <h3 className="module-card__title">{m.title}</h3>
-                {m.desc && <p className="module-card__desc">{m.desc}</p>}
-                {m.list && <ul className="module-card__list">{m.list.map((l, i) => <li key={i}>{l}</li>)}</ul>}
+                <p className="module-card__desc">{m.desc}</p>
               </article>
             ))}
           </div>
