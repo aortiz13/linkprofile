@@ -348,6 +348,25 @@ export const broadcastRecipients = pgTable(
   ]
 );
 
+// ─── Sales Funnels ───────────────────────────────────────────────────────────
+export const funnels = pgTable(
+  "funnels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),          // "Embudo A - Venta Directa"
+    slug: text("slug").notNull().unique(),  // "a" or "b"
+    description: text("description"),
+    active: boolean("active").notNull().default(false),
+    // Variants stored as JSON: [{ key: "1", label: "Long-form", path: "/w/a1", weight: 50 }, ...]
+    variants: jsonb("variants").notNull().default([]),
+    // Extra links for this funnel (gracias, bienvenido, etc.)
+    extraLinks: jsonb("extra_links").notNull().default([]),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("funnels_slug_idx").on(t.slug)]
+);
+
 // ─── Type exports ────────────────────────────────────────────────────────────
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
@@ -370,3 +389,4 @@ export type WaLinkToken = typeof waLinkTokens.$inferSelect;
 export type WaAudioSnippet = typeof waAudioSnippets.$inferSelect;
 export type BroadcastCampaign = typeof broadcastCampaigns.$inferSelect;
 export type BroadcastRecipient = typeof broadcastRecipients.$inferSelect;
+export type Funnel = typeof funnels.$inferSelect;

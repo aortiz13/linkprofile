@@ -13,6 +13,7 @@ import {
   Mic,
   KanbanSquare,
   Megaphone,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/pipeline", label: "Embudo", icon: KanbanSquare },
   { href: "/admin/leads", label: "Leads", icon: Users },
   { href: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
+  { href: "/admin/funnels", label: "Funnels", icon: FlaskConical },
   { href: "/admin/lead-magnets", label: "Lead Magnets", icon: Gift },
   { href: "/admin/audio-snippets", label: "Audios WA", icon: Mic },
   { href: "/admin/profile", label: "Page Builder", icon: LayoutTemplate },
