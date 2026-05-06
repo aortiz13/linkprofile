@@ -1,12 +1,10 @@
 "use client";
 
-import { WorkshopHeader, WorkshopFooter, LeadMagnetForm } from "../components";
+import { WorkshopFooter, LeadMagnetForm } from "../components";
 
 export default function B1Client() {
   return (
     <>
-      <WorkshopHeader pill="Recurso gratuito" />
-
       <section className="hero">
         <div className="container hero__inner">
           <span className="eyebrow-line">

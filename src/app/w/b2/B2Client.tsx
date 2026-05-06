@@ -1,12 +1,10 @@
 "use client";
 
-import { WorkshopHeader, WorkshopFooter, VideoShell, LeadMagnetForm } from "../components";
+import { WorkshopFooter, VideoShell, LeadMagnetForm } from "../components";
 
 export default function B2Client() {
   return (
     <>
-      <WorkshopHeader pill="Tutorial gratuito" />
-
       <section className="hero">
         <div className="container hero__inner">
           <span className="eyebrow-line">

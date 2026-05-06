@@ -1,6 +1,6 @@
 "use client";
 
-import { WorkshopHeader, WorkshopFooter } from "../components";
+import { WorkshopFooter } from "../components";
 
 const WA_SVG = (
   <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -17,8 +17,6 @@ const WA_SVG_FILL = (
 export default function BienvenidoClient() {
   return (
     <>
-      <WorkshopHeader pill="Pago confirmado" />
-
       <section className="wa-hero">
         <div className="container wa-hero__inner">
           <span className="wa-confirm-pill">

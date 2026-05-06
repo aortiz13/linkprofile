@@ -1,13 +1,11 @@
 "use client";
 
-import { WorkshopHeader, WorkshopFooter, VideoShell, PriceBlock, StickyCta, FaqItem } from "../components";
+import { WorkshopFooter, VideoShell, PriceBlock, StickyCta, FaqItem } from "../components";
 import StripeCTA from "../StripeCTA";
 
 export default function A2Client() {
   return (
     <>
-      <WorkshopHeader pill="Workshop · 16 May" />
-
       <section className="hero">
         <div className="container hero__inner">
           <span className="eyebrow-line">

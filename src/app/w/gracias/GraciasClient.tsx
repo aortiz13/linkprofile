@@ -1,13 +1,11 @@
 "use client";
 
-import { WorkshopHeader, WorkshopFooter, VideoShell } from "../components";
+import { WorkshopFooter, VideoShell } from "../components";
 import StripeCTA from "../StripeCTA";
 
 export default function GraciasClient() {
   return (
     <>
-      <WorkshopHeader pill="Confirmado" />
-
       {/* Confirmación */}
       <section className="confirm-banner">
         <div className="confirm-banner__check">✓</div>

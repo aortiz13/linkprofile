@@ -1,14 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { WorkshopHeader, WorkshopFooter, PriceBlock, Countdown, StickyCta, FaqItem } from "../components";
+import { WorkshopFooter, VideoShell, PriceBlock, Countdown, StickyCta, FaqItem } from "../components";
 import StripeCTA from "../StripeCTA";
 
 export default function A1Client() {
   return (
     <>
-      <WorkshopHeader pill="Workshop · 16 May" />
-
       {/* HERO */}
       <section className="hero">
         <div className="container hero__inner">
@@ -20,6 +18,9 @@ export default function A1Client() {
           <p className="hero__sub">
             Sesión <strong>100% en vivo</strong> donde vas a pasar de prompts básicos a sistemas automatizados que trabajan por vos mientras dormís.
           </p>
+
+          <VideoShell caption1="Mirá el video · 2:30" caption2="16 MAY · USD $17" style={{ margin: "32px 0 28px" }} />
+
           <p className="hero__support">
             El 95% de los usuarios de Claude lo usan como un buscador caro. Escriben un prompt, copian la respuesta, y repiten. Eso no es usar IA — <strong>eso es googlear con más pasos.</strong>
           </p>
