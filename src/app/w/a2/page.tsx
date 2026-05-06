@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function A2Page() {
   return (
     <>
-      <FunnelViewTracker funnelSlug="a" variantKey="a2" />
+      <FunnelViewTracker funnelSlug="a" variantKey="2" />
       <A2Client />
     </>
   );
