@@ -10,14 +10,31 @@ interface Variant {
   weight: number;
 }
 
+// Resolve the public origin behind a reverse proxy (Easypanel/Coolify/etc.).
+// `req.url` reflects the internal container URL (e.g. http://localhost:80),
+// which would leak into the redirect's Location header.
+function getPublicOrigin(req: NextRequest): string {
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  if (forwardedHost) {
+    return `${forwardedProto ?? "https"}://${forwardedHost}`;
+  }
+  const host = req.headers.get("host");
+  if (host && !host.startsWith("localhost") && !host.startsWith("127.")) {
+    return `${forwardedProto ?? "https"}://${host}`;
+  }
+  return "https://adrian-ortiz.com";
+}
+
 /**
  * Public redirect endpoint: /api/funnel/[slug]
  * Performs weighted random A/B split and redirects to the selected variant.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const origin = getPublicOrigin(req);
   try {
     const { slug } = await params;
     const [funnel] = await db
@@ -27,12 +44,12 @@ export async function GET(
       .limit(1);
 
     if (!funnel || !funnel.active) {
-      return NextResponse.redirect(new URL("/", _req.url));
+      return NextResponse.redirect(new URL("/", origin));
     }
 
     const variants = funnel.variants as Variant[];
     if (!variants || variants.length === 0) {
-      return NextResponse.redirect(new URL("/", _req.url));
+      return NextResponse.redirect(new URL("/", origin));
     }
 
     // Weighted random selection
@@ -48,9 +65,9 @@ export async function GET(
       }
     }
 
-    return NextResponse.redirect(new URL(selected.path, _req.url));
+    return NextResponse.redirect(new URL(selected.path, origin));
   } catch (error) {
     console.error("Funnel redirect error:", error);
-    return NextResponse.redirect(new URL("/", _req.url));
+    return NextResponse.redirect(new URL("/", origin));
   }
 }
