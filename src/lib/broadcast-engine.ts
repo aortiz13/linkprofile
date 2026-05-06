@@ -50,10 +50,11 @@ const activeCampaigns = new Map<string, { paused: boolean; cancelled: boolean }>
 // ─── Spintax Engine ──────────────────────────────────────────────────────────
 /**
  * Resolve spintax syntax: {option1|option2|option3} → random pick.
- * Supports nested spintax.
+ * Supports nested spintax. Requires at least one `|` so that `{{variable}}`
+ * placeholders are left intact for interpolateMessage.
  */
 export function resolveSpintax(template: string): string {
-  const regex = /\{([^{}]+)\}/g;
+  const regex = /\{([^{}]*\|[^{}]*)\}/g;
   let result = template;
   for (let i = 0; i < 5; i++) {
     const previous = result;
