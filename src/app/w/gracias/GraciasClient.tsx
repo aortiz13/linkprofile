@@ -1,6 +1,7 @@
 "use client";
 
 import { WorkshopHeader, WorkshopFooter, VideoShell } from "../components";
+import StripeCTA from "../StripeCTA";
 
 export default function GraciasClient() {
   return (
@@ -50,10 +51,10 @@ export default function GraciasClient() {
             </div>
             <p className="price-block__note">Precio de lanzamiento. Solo disponible en esta página.</p>
 
-            <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="btn btn--accent btn--lg">
+            <StripeCTA className="btn btn--accent btn--lg">
               Quiero mi lugar — $17 USD
               <span className="btn-arrow">→</span>
-            </a>
+            </StripeCTA>
 
             <ul className="price-block__details">
               <li>Sábado 16 mayo, 2026</li>

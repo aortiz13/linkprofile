@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import B1Client from "./B1Client";
+import FunnelViewTracker from "../FunnelViewTracker";
 
 export const metadata: Metadata = {
   title: "5 Prompts Pro para Claude · Gratis · Brandboost AI",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function B1Page() {
-  return <B1Client />;
+  return (
+    <>
+      <FunnelViewTracker funnelSlug="b" variantKey="b1" />
+      <B1Client />
+    </>
+  );
 }

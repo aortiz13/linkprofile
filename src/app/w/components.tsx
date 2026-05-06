@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import StripeCTA from "./StripeCTA";
 
 /* ── Header ── */
 export function WorkshopHeader({ pill }: { pill: string }) {
@@ -119,8 +120,8 @@ export function VideoShell({ caption1, caption2, style }: { caption1: string; ca
 }
 
 /* ── Price Block ── */
-export function PriceBlock({ eyebrow, title, note, ctaHref, ctaText, details }: {
-  eyebrow: string; title: string; note: string; ctaHref: string; ctaText: string; details: string[];
+export function PriceBlock({ eyebrow, title, note, ctaText, details }: {
+  eyebrow: string; title: string; note: string; ctaText: string; details: string[];
 }) {
   return (
     <div className="price-block">
@@ -131,10 +132,10 @@ export function PriceBlock({ eyebrow, title, note, ctaHref, ctaText, details }: 
         <span className="price-tag__new"><span className="price-tag__currency">USD</span>17</span>
       </div>
       <p className="price-block__note">{note}</p>
-      <a href={ctaHref} className="btn btn--accent btn--lg">
+      <StripeCTA className="btn btn--accent btn--lg">
         {ctaText}
         <span className="btn-arrow">→</span>
-      </a>
+      </StripeCTA>
       <ul className="price-block__details">
         {details.map((d, i) => <li key={i}>{d}</li>)}
       </ul>
@@ -196,7 +197,7 @@ export function StickyCta() {
         <small>Workshop 16 May</small>
         <span>$17 USD · 100 cupos</span>
       </div>
-      <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="sticky-cta__btn">Reservar →</a>
+      <StripeCTA className="sticky-cta__btn">Reservar →</StripeCTA>
     </div>
   );
 }

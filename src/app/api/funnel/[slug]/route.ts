@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { funnels } from "@/lib/db/schema";
+import { funnels, funnelEvents } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { createHash, randomUUID } from "crypto";
+import { isBot } from "@/lib/bot-filter";
+import { getGeo } from "@/lib/geo";
+import {
+  FunnelAttribution,
+  readAttribution,
+  setAttributionCookie,
+} from "@/lib/funnel-attribution";
 
 interface Variant {
   key: string;
@@ -28,7 +36,8 @@ function getPublicOrigin(req: NextRequest): string {
 
 /**
  * Public redirect endpoint: /api/funnel/[slug]
- * Performs weighted random A/B split and redirects to the selected variant.
+ * Performs weighted random A/B split, logs the click, sets the attribution
+ * cookie, and redirects to the chosen variant.
  */
 export async function GET(
   req: NextRequest,
@@ -65,9 +74,55 @@ export async function GET(
       }
     }
 
-    return NextResponse.redirect(new URL(selected.path, origin));
+    const response = NextResponse.redirect(new URL(selected.path, origin));
+
+    // ─── Tracking ────────────────────────────────────────────────────────────
+    const userAgent = req.headers.get("user-agent") || "";
+    if (!isBot(userAgent)) {
+      const existing = readAttribution(req);
+      // Reuse sessionId if the visitor already has one — keeps the funnel
+      // chain (click → view → sale) tied together across re-rolls.
+      const sessionId = existing?.sessionId ?? randomUUID();
+
+      const attr: FunnelAttribution = {
+        slug,
+        variant: selected.key,
+        sessionId,
+        ts: Date.now(),
+      };
+      setAttributionCookie(response, attr);
+
+      // Fire-and-forget the event insert. We don't await — redirects must
+      // happen fast and tracking is best-effort.
+      void recordClickEvent(req, attr);
+    }
+
+    return response;
   } catch (error) {
     console.error("Funnel redirect error:", error);
     return NextResponse.redirect(new URL("/", origin));
+  }
+}
+
+async function recordClickEvent(req: NextRequest, attr: FunnelAttribution) {
+  try {
+    const forwarded = req.headers.get("x-forwarded-for");
+    const rawIp = forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || null;
+    const hashedIp = rawIp ? createHash("sha256").update(rawIp).digest("hex").slice(0, 16) : null;
+    const geo = await getGeo(rawIp);
+
+    await db.insert(funnelEvents).values({
+      eventType: "click",
+      funnelSlug: attr.slug,
+      variantKey: attr.variant,
+      sessionId: attr.sessionId,
+      ip: hashedIp,
+      country: geo.country ?? null,
+      metadata: {
+        referrer: req.headers.get("referer"),
+      },
+    });
+  } catch (err) {
+    console.error("[funnel] click insert failed:", err);
   }
 }

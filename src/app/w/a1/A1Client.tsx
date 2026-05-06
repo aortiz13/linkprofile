@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { WorkshopHeader, WorkshopFooter, PriceBlock, Countdown, StickyCta, FaqItem } from "../components";
+import StripeCTA from "../StripeCTA";
 
 export default function A1Client() {
   return (
@@ -26,10 +27,10 @@ export default function A1Client() {
             Este workshop te muestra <strong>el otro 99%</strong>.
           </p>
           <div className="cta-block">
-            <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="btn btn--primary btn--lg">
+            <StripeCTA className="btn btn--primary btn--lg">
               Quiero mi lugar — $17 USD
               <span className="btn-arrow">→</span>
-            </a>
+            </StripeCTA>
             <span className="cta-meta">
               <span>100 cupos limitados</span>
               <span className="cta-meta__dot" />
@@ -232,7 +233,6 @@ export default function A1Client() {
             eyebrow="Precio de lanzamiento"
             title="Una sesión en vivo que va a cambiar cómo trabajás con IA. Para siempre."
             note="$17 es menos de lo que pagás por un mes de Claude Pro. La diferencia es que después de este workshop, ese plan te va a rendir 10 veces más."
-            ctaHref="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38"
             ctaText="Reservar mi lugar — $17 USD"
             details={["Sábado 16 de mayo, 2026 · 10am ARG", "100% EN VIVO · grabación incluida", "Grupo de WhatsApp exclusivo", "Acceso inmediato post-pago"]}
           />
@@ -252,10 +252,10 @@ export default function A1Client() {
             <div className="urgency-bar__progress"><div className="urgency-bar__progress-fill" style={{ width: "67%" }} /></div>
           </div>
           <div style={{ marginTop: 40 }}>
-            <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="btn btn--accent btn--lg">
+            <StripeCTA className="btn btn--accent btn--lg">
               Quiero mi lugar — $17 USD
               <span className="btn-arrow">→</span>
-            </a>
+            </StripeCTA>
           </div>
         </div>
       </section>
@@ -313,10 +313,10 @@ export default function A1Client() {
         <div className="container" style={{ textAlign: "center", maxWidth: 720, margin: "0 auto" }}>
           <h2 className="section__title" style={{ marginBottom: 24 }}>Decidí en menos de 1 minuto.</h2>
           <p className="section__sub" style={{ marginBottom: 32 }}>El sábado 16 de mayo, a esta misma hora, vas a estar usando Claude como un profesional o vas a seguir tirando tokens. Vos elegís.</p>
-          <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="btn btn--primary btn--lg">
+          <StripeCTA className="btn btn--primary btn--lg">
             Quiero mi lugar — $17 USD
             <span className="btn-arrow">→</span>
-          </a>
+          </StripeCTA>
         </div>
       </section>
 

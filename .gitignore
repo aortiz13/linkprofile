@@ -43,5 +43,5 @@ next-env.d.ts
 # Scratch scripts
 scratch/
 
-# Nested app copy (do not track)
-app/
+# Nested app copy (do not track) — anchored so it doesn't swallow src/app/
+/app/

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import A2Client from "./A2Client";
+import FunnelViewTracker from "../FunnelViewTracker";
 
 export const metadata: Metadata = {
   title: "Domina Claude · Workshop EN VIVO · USD $17",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function A2Page() {
-  return <A2Client />;
+  return (
+    <>
+      <FunnelViewTracker funnelSlug="a" variantKey="a2" />
+      <A2Client />
+    </>
+  );
 }

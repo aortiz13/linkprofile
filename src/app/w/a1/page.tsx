@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import A1Client from "./A1Client";
+import FunnelViewTracker from "../FunnelViewTracker";
 
 export const metadata: Metadata = {
   title: "Domina Claude a Nivel Profesional · Workshop $17 USD",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function A1Page() {
-  return <A1Client />;
+  return (
+    <>
+      <FunnelViewTracker funnelSlug="a" variantKey="a1" />
+      <A1Client />
+    </>
+  );
 }

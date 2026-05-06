@@ -12,8 +12,12 @@ import {
   Link2,
   FlaskConical,
   Percent,
+  MousePointerClick,
+  Eye,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Variant {
@@ -40,6 +44,27 @@ interface Funnel {
   updatedAt: string;
 }
 
+interface VariantMetrics {
+  funnelSlug: string;
+  variantKey: string;
+  clicks: number;
+  views: number;
+  sales: number;
+  revenueCents: number;
+  currency: string | null;
+}
+
+function formatRevenue(cents: number, currency: string | null): string {
+  const amount = (cents / 100).toFixed(2);
+  const code = (currency ?? "usd").toUpperCase();
+  return `${code} $${amount}`;
+}
+
+function formatRate(numerator: number, denominator: number): string {
+  if (denominator <= 0) return "—";
+  return `${((numerator / denominator) * 100).toFixed(1)}%`;
+}
+
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -51,6 +76,20 @@ export default function FunnelsPage() {
     queryKey: ["funnels"],
     queryFn: () => fetch("/api/admin/funnels").then((r) => r.json()),
   });
+
+  const { data: metricsData } = useQuery<{ metrics: VariantMetrics[] }>({
+    queryKey: ["funnels-metrics"],
+    queryFn: () => fetch("/api/admin/funnels/metrics").then((r) => r.json()),
+    refetchInterval: 30_000,
+  });
+
+  const metricsByVariant = useMemo(() => {
+    const map = new Map<string, VariantMetrics>();
+    for (const m of metricsData?.metrics ?? []) {
+      map.set(`${m.funnelSlug}:${m.variantKey}`, m);
+    }
+    return map;
+  }, [metricsData]);
 
   const updateFunnel = useMutation({
     mutationFn: async (payload: { id: string; active?: boolean; variants?: Variant[] }) => {
@@ -191,12 +230,19 @@ export default function FunnelsPage() {
                     {funnel.variants.map((variant) => {
                       const pct = totalWeight > 0 ? Math.round((variant.weight / totalWeight) * 100) : 0;
                       const variantFullUrl = `${BASE_URL}${variant.path}`;
+                      const m = metricsByVariant.get(`${funnel.slug}:${variant.key}`);
+                      const clicks = m?.clicks ?? 0;
+                      const views = m?.views ?? 0;
+                      const sales = m?.sales ?? 0;
+                      const revenueCents = m?.revenueCents ?? 0;
+                      const currency = m?.currency ?? null;
 
                       return (
                         <div
                           key={variant.key}
-                          className="flex items-center gap-3 p-3 bg-[var(--bg-surface)] rounded-[var(--radius-md)] border border-[var(--border)]"
+                          className="p-3 bg-[var(--bg-surface)] rounded-[var(--radius-md)] border border-[var(--border)] space-y-3"
                         >
+                          <div className="flex items-center gap-3">
                           {/* Weight indicator bar */}
                           <div className="relative w-12 h-12 flex-shrink-0">
                             <svg viewBox="0 0 36 36" className="w-12 h-12 -rotate-90">
@@ -270,6 +316,36 @@ export default function FunnelsPage() {
                               <ExternalLink className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                             </a>
                           </div>
+                          </div>
+
+                          {/* Metrics row */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-[var(--border)]">
+                            <MetricStat
+                              icon={<MousePointerClick className="w-3.5 h-3.5" />}
+                              label="Clicks"
+                              value={clicks.toLocaleString()}
+                            />
+                            <MetricStat
+                              icon={<Eye className="w-3.5 h-3.5" />}
+                              label="Vistas"
+                              value={views.toLocaleString()}
+                              sub={`${formatRate(views, clicks)} click→view`}
+                            />
+                            <MetricStat
+                              icon={<TrendingUp className="w-3.5 h-3.5" />}
+                              label="Ventas"
+                              value={sales.toLocaleString()}
+                              sub={`${formatRate(sales, views)} view→sale`}
+                              highlight={sales > 0}
+                            />
+                            <MetricStat
+                              icon={<DollarSign className="w-3.5 h-3.5" />}
+                              label="Revenue"
+                              value={formatRevenue(revenueCents, currency)}
+                              sub={`${formatRate(sales, clicks)} click→sale`}
+                              highlight={revenueCents > 0}
+                            />
+                          </div>
                         </div>
                       );
                     })}
@@ -319,6 +395,47 @@ export default function FunnelsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetricStat({
+  icon,
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`px-2.5 py-2 rounded-[var(--radius-md)] ${
+        highlight
+          ? "bg-emerald-500/10 border border-emerald-500/30"
+          : "bg-[var(--bg-elevated)] border border-[var(--border)]"
+      }`}
+    >
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">
+        {icon}
+        {label}
+      </div>
+      <div
+        className={`text-sm font-bold tabular-nums ${
+          highlight ? "text-emerald-500" : "text-[var(--text-primary)]"
+        }`}
+      >
+        {value}
+      </div>
+      {sub && (
+        <div className="text-[10px] text-[var(--text-muted)] tabular-nums mt-0.5 truncate" title={sub}>
+          {sub}
         </div>
       )}
     </div>

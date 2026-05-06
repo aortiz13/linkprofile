@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import B2Client from "./B2Client";
+import FunnelViewTracker from "../FunnelViewTracker";
 
 export const metadata: Metadata = {
   title: "Configurá Claude como un profesional en 10 minutos · Gratis",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function B2Page() {
-  return <B2Client />;
+  return (
+    <>
+      <FunnelViewTracker funnelSlug="b" variantKey="b2" />
+      <B2Client />
+    </>
+  );
 }

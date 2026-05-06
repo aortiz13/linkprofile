@@ -367,6 +367,35 @@ export const funnels = pgTable(
   (t) => [index("funnels_slug_idx").on(t.slug)]
 );
 
+// ─── Funnel Events (clicks, views, sales) ────────────────────────────────────
+// Single denormalized table powering the conversion funnel:
+//   click  → /api/funnel/[slug] redirect chose a variant
+//   view   → visitor landed on a variant page (/w/a1, /w/a2, ...)
+//   sale   → Stripe checkout.session.completed fired with our client_reference_id
+export const funnelEvents = pgTable(
+  "funnel_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventType: text("event_type").notNull(), // 'click' | 'view' | 'sale'
+    funnelSlug: text("funnel_slug").notNull(),
+    variantKey: text("variant_key").notNull(),
+    sessionId: text("session_id").notNull(),
+    ip: text("ip"), // hashed
+    country: text("country"),
+    // Sale-only fields
+    amountCents: integer("amount_cents"),
+    currency: text("currency"),
+    stripeSessionId: text("stripe_session_id"),
+    metadata: jsonb("metadata"),
+    timestamp: timestamp("timestamp").defaultNow().notNull(),
+  },
+  (t) => [
+    index("funnel_events_lookup_idx").on(t.funnelSlug, t.variantKey, t.eventType, t.timestamp),
+    index("funnel_events_session_idx").on(t.sessionId),
+    index("funnel_events_stripe_session_idx").on(t.stripeSessionId),
+  ]
+);
+
 // ─── Type exports ────────────────────────────────────────────────────────────
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
@@ -390,3 +419,5 @@ export type WaAudioSnippet = typeof waAudioSnippets.$inferSelect;
 export type BroadcastCampaign = typeof broadcastCampaigns.$inferSelect;
 export type BroadcastRecipient = typeof broadcastRecipients.$inferSelect;
 export type Funnel = typeof funnels.$inferSelect;
+export type FunnelEvent = typeof funnelEvents.$inferSelect;
+export type NewFunnelEvent = typeof funnelEvents.$inferInsert;

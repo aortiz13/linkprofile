@@ -15,6 +15,13 @@
       "when": 1776705791270,
       "tag": "0001_little_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778079445161,
+      "tag": "0002_stormy_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

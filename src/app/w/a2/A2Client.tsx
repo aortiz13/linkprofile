@@ -1,6 +1,7 @@
 "use client";
 
 import { WorkshopHeader, WorkshopFooter, VideoShell, PriceBlock, StickyCta, FaqItem } from "../components";
+import StripeCTA from "../StripeCTA";
 
 export default function A2Client() {
   return (
@@ -25,10 +26,10 @@ export default function A2Client() {
           </ul>
 
           <div className="cta-block" style={{ marginBottom: 16 }}>
-            <a href="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38" className="btn btn--primary btn--lg">
+            <StripeCTA className="btn btn--primary btn--lg">
               Reservar mi lugar — $17 USD
               <span className="btn-arrow">→</span>
-            </a>
+            </StripeCTA>
             <span className="cta-meta">
               <span>100 cupos</span>
               <span className="cta-meta__dot" />
@@ -60,7 +61,6 @@ export default function A2Client() {
             eyebrow="Precio de lanzamiento"
             title="Una sesión EN VIVO. Un solo objetivo: que Claude trabaje por vos."
             note="Menos que un mes de Claude Pro. Después del workshop, ese plan te rinde 10 veces más."
-            ctaHref="https://buy.stripe.com/28EeVccJUfBo3MU4EN1Fe38"
             ctaText="Quiero mi lugar — $17 USD"
             details={["Sábado 16 de mayo, 2026 · 10am ARG", "100% EN VIVO · grabación incluida", "Grupo de WhatsApp"]}
           />
