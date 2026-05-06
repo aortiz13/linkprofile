@@ -135,10 +135,10 @@ export default function A1Client() {
           </div>
           <div className="module-list">
             {[
-              { num: "M01", title: "Configuración Profesional de Claude", desc: "Cómo configurar Projects, Custom Instructions y tu entorno para que Claude te entienda desde el primer mensaje. Vas a dejar de repetirle contexto cada vez." },
-              { num: "M02", title: "Automatización de Tareas Reales", desc: null, list: ["Si sos emprendedor: automatizar captación de clientes y contenido.", "Si sos empleado: automatizar reportes y análisis.", "Si sos estudiante: automatizar investigación y proyectos."] },
-              { num: "M03", title: "De Prompt a Sistema", desc: "Vas a construir en vivo tu primer flujo automatizado. No teoría — vas a salir del workshop con algo funcionando." },
-              { num: "M04", title: "Caso Real + Q&A", desc: "Demostración en tiempo real resolviendo problemas de los asistentes. Traé tu caso y lo resolvemos juntos." },
+              { num: "M01", title: "Capa 1 — Dale contexto o dale basura", desc: "Custom Instructions, Projects y el prompt que ahorra 60% de tokens. Configurás tu Claude para que entienda quién sos, qué hacés y cómo trabajás — sin repetirle el contexto cada vez." },
+              { num: "M02", title: "Capa 2 — Hablale como a un empleado senior", desc: null, list: ["Si sos emprendedor: guión de video para redes en 3 turnos.", "Si sos empleado: análisis de datos de Excel en 3 turnos.", "Si sos estudiante: estructurar un capítulo de tesis en 3 turnos."] },
+              { num: "M03", title: "Capa 3 — De asistente a sistema", desc: "El salto mental de herramienta → asistente → sistema. Vas a ver ejemplos reales funcionando: WhatsApp 24/7, reportes automáticos, contenido en piloto automático." },
+              { num: "M04", title: "Demo en vivo + Q&A", desc: "Tomamos el caso de un asistente y le armamos un mini-sistema en 5 minutos con todo lo aprendido. Traé tu caso y lo resolvemos juntos." },
             ].map((m) => (
               <article key={m.num} className="module-card">
                 <div className="module-card__head">
