@@ -31,7 +31,7 @@ export default function BienvenidoClient() {
           <p className="wa-hero__sub">
             Tu pago se confirmó. <strong>Te esperamos en el grupo exclusivo de WhatsApp</strong> donde vamos a coordinar todo lo del workshop del 16 de mayo.
           </p>
-          <a href="https://chat.whatsapp.com/" target="_blank" rel="noopener" className="btn btn--whatsapp btn--lg">
+          <a href="https://chat.whatsapp.com/BT74iHONO0yHzZ1XOTbi0n" target="_blank" rel="noopener" className="btn btn--whatsapp btn--lg">
             {WA_SVG_FILL}
             Unirme al grupo de WhatsApp
             <span className="btn-arrow">→</span>
@@ -130,7 +130,7 @@ export default function BienvenidoClient() {
         <div className="container">
           <h2>No dejes el grupo para después.</h2>
           <p>El primer mensaje del workshop sale por WhatsApp en las próximas horas. Sumate ahora para no perderte nada.</p>
-          <a href="https://chat.whatsapp.com/" target="_blank" rel="noopener" className="btn btn--whatsapp btn--lg">
+          <a href="https://chat.whatsapp.com/BT74iHONO0yHzZ1XOTbi0n" target="_blank" rel="noopener" className="btn btn--whatsapp btn--lg">
             {WA_SVG_FILL}
             Entrar al grupo de WhatsApp
             <span className="btn-arrow">→</span>
