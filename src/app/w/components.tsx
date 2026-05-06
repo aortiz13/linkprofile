@@ -107,14 +107,24 @@ export function LeadMagnetForm({ cta, note, redirectTo }: { cta: string; note: s
 }
 
 /* ── Video Shell ── */
-export function VideoShell({ caption1, caption2, style }: { caption1: string; caption2: string; style?: React.CSSProperties }) {
+export function VideoShell({ style }: { style?: React.CSSProperties }) {
   return (
-    <div className="video-shell" style={style} role="button" aria-label="Reproducir video">
-      <div className="video-shell__play">▶</div>
-      <div className="video-shell__caption">
-        <span>{caption1}</span>
-        <span>{caption2}</span>
-      </div>
+    <div
+      style={{
+        padding: "75% 0 0 0",
+        position: "relative",
+        borderRadius: 12,
+        overflow: "hidden",
+        ...style,
+      }}
+    >
+      <iframe
+        src="https://player.vimeo.com/video/1189761638?badge=0&autopause=0&player_id=0&app_id=58479"
+        allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
+        title="Workshop · Domina Claude"
+      />
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default function GraciasClient() {
             <p className="section__sub">Lo que cambia tu vida con IA no son los prompts. Es saber <strong>cómo pensar</strong> con IA.</p>
           </div>
 
-          <VideoShell caption1="Mirá esto · 2:15" caption2="Workshop · 16 May" style={{ marginBottom: 32 }} />
+          <VideoShell style={{ marginBottom: 32 }} />
 
           <div className="price-block">
             <span className="price-block__eyebrow">WORKSHOP EN VIVO · SOLO $17 USD</span>

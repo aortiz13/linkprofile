@@ -14,7 +14,7 @@ export default function B2Client() {
           <h1>Cómo configurar Claude como <em>un profesional</em> en 10 minutos.</h1>
           <p className="hero__sub">Tutorial gratuito paso a paso. Incluye 2 prompts avanzados listos para copiar.</p>
 
-          <VideoShell caption1="Preview · 0:30" caption2="Tutorial completo · 10 min" style={{ margin: "28px 0" }} />
+          <VideoShell style={{ margin: "28px 0" }} />
 
           <ul className="magnet-bullets">
             <li>Configurá Projects y Custom Instructions para que Claude te entienda sin repetir contexto.</li>

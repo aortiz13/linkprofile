@@ -15,7 +15,7 @@ export default function A2Client() {
           <h1>¿Pagás Claude Pro y solo usás <em>el 1%</em>?</h1>
           <p className="hero__sub">En vivo te muestro el otro 99%.</p>
 
-          <VideoShell caption1="Mirá el video · 2:30" caption2="16 MAY · USD $17" style={{ margin: "32px 0 28px" }} />
+          <VideoShell style={{ margin: "32px 0 28px" }} />
 
           <ul className="quick-bullets">
             <li>Configurá Claude como un profesional, no como un chatbot genérico.</li>
