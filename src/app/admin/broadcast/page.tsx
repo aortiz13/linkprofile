@@ -62,7 +62,7 @@ function resolveSpintaxPreview(template: string): string {
   let result = template;
   for (let i = 0; i < 5; i++) {
     const prev = result;
-    result = result.replace(/\{([^{}]+)\}/g, (_m, g: string) => {
+    result = result.replace(/\{([^{}]*\|[^{}]*)\}/g, (_m, g: string) => {
       const opts = g.split("|");
       return opts[Math.floor(Math.random() * opts.length)];
     });
